@@ -668,6 +668,24 @@ body{background:var(--bg);color:var(--txt);font-family:var(--serif);min-height:1
 </div><!-- end mod-content -->
 </div><!-- end module-view -->
 <div id="toast"></div>
+
+<!-- Modal detalle caballo -->
+<div class="ov" id="mo-cab">
+  <div class="mo" style="max-width:600px;max-height:90vh;">
+    <button class="mo-x" onclick="closeM('mo-cab')">✕</button>
+    <div class="mo-t" id="mo-cab-t">Caballo</div>
+    <div id="mo-cab-body"></div>
+  </div>
+</div>
+
+<!-- Modal nuevo caballo -->
+<div class="ov" id="mo-nuevo-cab">
+  <div class="mo" style="max-width:540px;">
+    <button class="mo-x" onclick="closeM('mo-nuevo-cab')">✕</button>
+    <div class="mo-t">🐎 Nuevo caballo</div>
+    <div id="mo-nuevo-cab-body"></div>
+  </div>
+</div>
 <div class="ov" id="mo-comp"><div class="mo"><button class="mo-x" onclick="closeM('mo-comp')">✕</button><div class="mo-t" id="mo-comp-t">Competencia</div><div id="mo-comp-body"></div></div></div>
 <div class="ov" id="mo-edit"><div class="mo"><button class="mo-x" onclick="closeM('mo-edit')">✕</button><div class="mo-t">✏️ Editar competencia</div><div id="mo-edit-body"></div></div></div>
 <div class="ov" id="mo-obj"><div class="mo" style="max-width:360px;"><button class="mo-x" onclick="closeM('mo-obj')">✕</button><div class="mo-t">🎯 Nuevo objetivo</div><div class="fg"><label>Nombre del objetivo</label><input type="text" id="obj-inp" placeholder="Ej: 🎯 Timing de salida"></div><div class="br"><button class="btn" onclick="saveObj()">Agregar</button></div></div></div>
@@ -934,12 +952,520 @@ function updateHdr(){
   else el.textContent='Sin competencias próximas definidas';
 }
 
-// Placeholder para caballos (módulo nuevo — se construye en la siguiente iteración)
-function renderCaballos(){
-  const el=document.getElementById('tab-caballos');
-  if(!el)return;
-  el.innerHTML=`<div class="card"><div class="ct">🐎 Módulo de Caballos</div><p style="font-size:.86rem;color:var(--lona2);line-height:1.7;">Este módulo está en construcción. Aquí podrás registrar tus caballos, hacer seguimiento de su plan sanitario, historial de entrenamiento, partos y más.</p></div>`;
+// ══════════════════════════════════════
+// MÓDULO DE CABALLOS
+// ══════════════════════════════════════
+
+// ── ESTADO LOCAL ──
+let caballosData = [];       // fichas completas
+let curCaballo = null;       // ficha activa en modal
+let cabTab = 'fichas';       // sub-tab activo
+
+// ── CARGA INICIAL DESDE SUPABASE ──
+async function loadCaballosData() {
+  try {
+    const { data: fichas } = await sb.from('caballos_fichas').select('*').order('nombre');
+    caballosData = fichas || [];
+  } catch(e) {
+    caballosData = S.get('caballos_fichas_local') || [];
+  }
 }
+
+// ── RENDER PRINCIPAL ──
+async function renderCaballos() {
+  const el = document.getElementById('tab-caballos');
+  if (!el) return;
+  await loadCaballosData();
+  el.innerHTML = buildCaballosHTML();
+  renderCaballosList();
+  checkRecordatorios();
+}
+
+function buildCaballosHTML() {
+  return `
+  <!-- Recordatorios pendientes -->
+  <div id="cab-recordatorios"></div>
+
+  <!-- Botón agregar caballo -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+    <div>
+      <div class="sl">Gestión</div>
+      <div class="st">Mis <em>Caballos</em></div>
+    </div>
+    <button class="btn" onclick="openNuevoCaballo()">+ Agregar caballo</button>
+  </div>
+
+  <!-- Lista de caballos -->
+  <div id="cab-lista"></div>
+
+  <!-- Estado vacío -->
+  <div id="cab-empty" style="display:none;">
+    <div class="card plain" style="text-align:center;padding:2rem 1rem;">
+      <div style="font-size:3rem;margin-bottom:.8rem;">🐎</div>
+      <div class="ct" style="justify-content:center;">Sin caballos registrados</div>
+      <p style="font-size:.84rem;color:var(--txt2);line-height:1.65;margin-bottom:.8rem;">
+        Agrega tus caballos para hacer seguimiento de su plan sanitario, entrenamientos y más.
+      </p>
+      <button class="btn" onclick="openNuevoCaballo()">+ Agregar primer caballo</button>
+    </div>
+  </div>
+  `;
+}
+
+function renderCaballosList() {
+  const lista = document.getElementById('cab-lista');
+  const empty = document.getElementById('cab-empty');
+  if (!lista) return;
+  if (!caballosData.length) {
+    lista.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  lista.innerHTML = caballosData.map(c => caballoCard(c)).join('');
+}
+
+function caballoCard(c) {
+  const sexoIcon = { macho: '🐴', yegua: '🐎', castrado: '🐴' }[c.sexo] || '🐎';
+  const edad = c.fecha_nacimiento ? calcEdad(c.fecha_nacimiento) : '';
+  return `
+  <div class="card" style="cursor:pointer;" onclick="openCaballoDetalle('${c.id}')">
+    <div style="display:flex;align-items:flex-start;gap:.8rem;">
+      <div style="width:48px;height:48px;border-radius:50%;background:var(--verde-pale2);border:2px solid rgba(90,138,50,.25);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">${sexoIcon}</div>
+      <div style="flex:1;">
+        <div style="font-family:var(--display);font-size:1.1rem;font-weight:700;color:var(--verde);">${c.nombre}${c.apodo ? ` <span style="font-style:italic;color:var(--txt3);font-size:.85rem;">"${c.apodo}"</span>` : ''}</div>
+        <div style="font-family:var(--mono);font-size:.58rem;color:var(--txt3);margin-top:.15rem;">${[c.raza, c.color, edad].filter(Boolean).join(' · ')}</div>
+        <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.4rem;">
+          ${c.sexo === 'yegua' ? '<span class="tag tm">🐎 Yegua</span>' : c.sexo === 'castrado' ? '<span class="tag tg">🐴 Castrado</span>' : '<span class="tag tg">🐴 Macho</span>'}
+          ${!c.activo ? '<span class="tag tr">Inactivo</span>' : ''}
+        </div>
+      </div>
+      <div style="font-size:1.2rem;color:var(--txt3);">›</div>
+    </div>
+  </div>`;
+}
+
+function calcEdad(fechaNac) {
+  const hoy = new Date();
+  const nac = new Date(fechaNac + 'T12:00:00');
+  let años = hoy.getFullYear() - nac.getFullYear();
+  const m = hoy.getMonth() - nac.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) años--;
+  return años > 0 ? años + (años === 1 ? ' año' : ' años') : '';
+}
+
+// ── RECORDATORIOS SANITARIOS ──
+async function checkRecordatorios() {
+  const el = document.getElementById('cab-recordatorios');
+  if (!el || !caballosData.length) return;
+  try {
+    const hoy = new Date().toISOString().split('T')[0];
+    const en7 = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+    const ids = caballosData.map(c => c.id);
+    const { data: pend } = await sb.from('caballos_sanitario')
+      .select('*, caballos_fichas(nombre)')
+      .in('caballo_id', ids)
+      .not('fecha_proxima', 'is', null)
+      .lte('fecha_proxima', en7)
+      .order('fecha_proxima');
+    if (!pend || !pend.length) { el.innerHTML = ''; return; }
+    el.innerHTML = `<div class="card r" style="margin-bottom:.75rem;">
+      <div class="ct">⚠️ Próximos vencimientos sanitarios</div>
+      ${pend.map(p => {
+        const dias = Math.ceil((new Date(p.fecha_proxima + 'T12:00:00') - new Date()) / 86400000);
+        const urg = dias <= 0 ? 'color:var(--rojo2);font-weight:700;' : dias <= 3 ? 'color:var(--rojo2);' : 'color:var(--oro2);';
+        return `<div class="fin-row"><div class="fin-lbl"><strong>${p.caballos_fichas?.nombre}</strong> — ${p.descripcion}</div><span style="font-family:var(--mono);font-size:.62rem;${urg}">${dias <= 0 ? 'VENCIDO' : 'en ' + dias + 'd'}</span></div>`;
+      }).join('')}
+    </div>`;
+  } catch(e) { el.innerHTML = ''; }
+}
+
+// ── DETALLE DE CABALLO ──
+async function openCaballoDetalle(id) {
+  curCaballo = caballosData.find(c => c.id === id);
+  if (!curCaballo) return;
+  cabTab = 'sanitario';
+  document.getElementById('mo-cab-t').textContent = (curCaballo.sexo === 'yegua' ? '🐎 ' : '🐴 ') + curCaballo.nombre;
+  await renderCabDetalle();
+  openM('mo-cab');
+}
+
+async function renderCabDetalle() {
+  const el = document.getElementById('mo-cab-body');
+  if (!el || !curCaballo) return;
+  const c = curCaballo;
+  const edad = c.fecha_nacimiento ? calcEdad(c.fecha_nacimiento) : '—';
+
+  // Cargar datos
+  let sanitario = [], entrenos = [], partos = [];
+  try {
+    const [s, e, p] = await Promise.all([
+      sb.from('caballos_sanitario').select('*').eq('caballo_id', c.id).order('fecha', { ascending: false }),
+      sb.from('caballos_entrenos').select('*').eq('caballo_id', c.id).order('fecha', { ascending: false }),
+      c.sexo === 'yegua' ? sb.from('caballos_partos').select('*').eq('caballo_id', c.id).order('fecha_parto', { ascending: false }) : { data: [] }
+    ]);
+    sanitario = s.data || []; entrenos = e.data || []; partos = p.data || [];
+  } catch(err) { console.warn('Error cargando detalle caballo:', err); }
+
+  // Último recordatorio activo de entreno
+  const ultimoEntreno = entrenos.find(e => e.recordatorio_activo && e.por_mejorar);
+
+  el.innerHTML = `
+  <!-- Sub-tabs -->
+  <div style="display:flex;gap:.3rem;margin-bottom:.9rem;overflow-x:auto;padding-bottom:.1rem;">
+    ${[
+      ['sanitario','💉 Sanitario'],
+      ['entrenos','🪢 Entrenos'],
+      c.sexo==='yegua'?['partos','🍼 Partos']:null,
+      ['ficha','📋 Ficha'],
+    ].filter(Boolean).map(([tab, lbl]) =>
+      `<button class="sess-pill ${cabTab===tab?'on':''}" onclick="cabSwitchTab('${tab}')">${lbl}</button>`
+    ).join('')}
+  </div>
+
+  <!-- Recordatorio de entrenamiento -->
+  ${ultimoEntreno ? `<div style="background:var(--oro-pale);border:1px solid rgba(184,144,10,.25);border-radius:var(--radio);padding:.7rem .9rem;margin-bottom:.75rem;">
+    <div style="font-family:var(--mono);font-size:.56rem;color:var(--oro2);letter-spacing:.1em;margin-bottom:.25rem;">📌 RECORDATORIO DEL ÚLTIMO ENTRENO · ${ultimoEntreno.fecha}</div>
+    <div style="font-size:.86rem;color:var(--txt);line-height:1.6;">${ultimoEntreno.por_mejorar}</div>
+    <button class="btn ghost sm" style="margin-top:.4rem;" onclick="marcarRecordatorio('${ultimoEntreno.id}')">✓ Visto</button>
+  </div>` : ''}
+
+  <!-- Contenido del sub-tab -->
+  <div id="cab-tab-content"></div>
+  `;
+
+  renderCabTab(sanitario, entrenos, partos);
+}
+
+function cabSwitchTab(tab) {
+  cabTab = tab;
+  document.querySelectorAll('#mo-cab-body .sess-pill').forEach(b => {
+    b.classList.toggle('on', b.textContent.toLowerCase().includes(tab) || b.getAttribute('onclick').includes(`'${tab}'`));
+  });
+  // Re-fetch no necesario, ya tenemos los datos en el scope — recargamos el modal completo
+  renderCabDetalle();
+}
+
+function renderCabTab(sanitario, entrenos, partos) {
+  const el = document.getElementById('cab-tab-content');
+  if (!el) return;
+  const c = curCaballo;
+  const TIPO_SAN = { vacuna:'💉 Vacuna', desparasitacion:'🦠 Desparasitación', herraje:'🔧 Herraje', dental:'🦷 Dental', veterinario:'👨‍⚕️ Veterinario', vitaminas:'💊 Vitaminas', laboratorio:'🔬 Laboratorio', cirugia:'🏥 Cirugía', otro:'📌 Otro' };
+
+  if (cabTab === 'sanitario') {
+    el.innerHTML = `
+    <div class="fg"><label>Tipo</label>
+      <select id="san-tipo"><option value="">— Seleccionar —</option>
+        ${Object.entries(TIPO_SAN).map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}
+      </select>
+    </div>
+    <div class="g2">
+      <div class="fg"><label>Descripción</label><input type="text" id="san-desc" placeholder="Ej: Aftosa, desparasitación..."></div>
+      <div class="fg"><label>Fecha realizada</label><input type="date" id="san-fecha"></div>
+      <div class="fg"><label>Próxima fecha</label><input type="date" id="san-prox"></div>
+      <div class="fg"><label>Costo ($)</label><input type="number" id="san-costo" placeholder="0"></div>
+    </div>
+    <div class="fg"><label>Veterinario / proveedor</label><input type="text" id="san-vet" placeholder="Nombre del veterinario"></div>
+    <div class="fg"><label>Observaciones</label><textarea id="san-obs" placeholder="Reacciones, recomendaciones..." style="min-height:55px;"></textarea></div>
+    <div class="br"><button class="btn" onclick="saveSanitario()">💾 Guardar registro</button></div>
+    <div class="div"></div>
+    <div style="font-family:var(--display);font-size:.94rem;font-weight:700;color:var(--verde);margin-bottom:.5rem;">Historial</div>
+    ${sanitario.length ? sanitario.map(s => `
+      <div class="hi">
+        <div class="hi-hd">
+          <span class="hi-d">${s.fecha}</span>
+          <span class="hi-n" style="font-size:.84rem;">${TIPO_SAN[s.tipo]||s.tipo} — ${s.descripcion}</span>
+          <button onclick="delSanitario('${s.id}')" class="fin-del">✕</button>
+        </div>
+        ${s.fecha_proxima ? `<div style="font-family:var(--mono);font-size:.56rem;color:var(--oro2);margin-top:.25rem;">📅 Próxima: ${s.fecha_proxima}</div>` : ''}
+        ${s.veterinario ? `<div style="font-family:var(--mono);font-size:.54rem;color:var(--txt3);margin-top:.12rem;">👨‍⚕️ ${s.veterinario}</div>` : ''}
+        ${s.costo ? `<div style="font-family:var(--mono);font-size:.54rem;color:var(--txt3);margin-top:.12rem;">💰 ${fmtCOP(s.costo)}</div>` : ''}
+        ${s.observaciones ? `<div style="font-style:italic;font-size:.78rem;color:var(--txt2);margin-top:.2rem;">${s.observaciones}</div>` : ''}
+      </div>`).join('') : '<p style="font-size:.82rem;color:var(--txt3);">Sin registros sanitarios aún.</p>'}
+    `;
+  }
+
+  else if (cabTab === 'entrenos') {
+    el.innerHTML = `
+    <div class="g2">
+      <div class="fg"><label>Fecha</label><input type="date" id="cabe-fecha"></div>
+      <div class="fg"><label>Duración (min)</label><input type="number" id="cabe-dur" placeholder="60"></div>
+    </div>
+    <div class="fg"><label>Tipo</label>
+      <select id="cabe-tipo">
+        <option value="lazos">🪢 Lazos</option><option value="trote">🏃 Trote/Galope</option>
+        <option value="parados">🎯 Parados y arranques</option><option value="manejo">🤝 Manejo en piso</option>
+        <option value="otro">📌 Otro</option>
+      </select>
+    </div>
+    <div class="fg"><label>¿Qué trabajamos?</label><textarea id="cabe-desc" placeholder="Describe el trabajo de hoy..." style="min-height:60px;"></textarea></div>
+    <div class="fg"><label>✅ Logros del día</label><textarea id="cabe-logros" placeholder="¿Qué mejoró? ¿Qué respondió bien?" style="min-height:55px;"></textarea></div>
+    <div class="fg"><label>📌 Por mejorar (recordatorio próximo entreno)</label><textarea id="cabe-mejora" placeholder="Esto aparecerá como recordatorio la próxima sesión..." style="min-height:55px;background:var(--oro-pale);border-color:rgba(184,144,10,.25);"></textarea></div>
+    <div class="br"><button class="btn" onclick="saveCabEntreno()">💾 Guardar sesión</button></div>
+    <div class="div"></div>
+    <div style="font-family:var(--display);font-size:.94rem;font-weight:700;color:var(--verde);margin-bottom:.5rem;">Historial</div>
+    ${entrenos.length ? entrenos.map(e => `
+      <div class="hi">
+        <div class="hi-hd">
+          <span class="hi-d">${e.fecha}</span>
+          <span class="hi-n" style="font-size:.84rem;">${{lazos:'🪢',trote:'🏃',parados:'🎯',manejo:'🤝',otro:'📌'}[e.tipo]||'📌'} ${e.descripcion||''}</span>
+          <button onclick="delCabEntreno('${e.id}')" class="fin-del">✕</button>
+        </div>
+        ${e.logros ? `<div style="font-size:.78rem;color:var(--verde2);margin-top:.25rem;">✅ ${e.logros}</div>` : ''}
+        ${e.por_mejorar ? `<div style="font-size:.78rem;color:var(--oro2);margin-top:.12rem;">📌 ${e.por_mejorar} ${e.recordatorio_activo?'<span class="tag tm" style="font-size:.48rem;">activo</span>':''}</div>` : ''}
+      </div>`).join('') : '<p style="font-size:.82rem;color:var(--txt3);">Sin sesiones de entrenamiento registradas.</p>'}
+    `;
+  }
+
+  else if (cabTab === 'partos') {
+    el.innerHTML = `
+    <div class="g2">
+      <div class="fg"><label>Fecha de servicio / monta</label><input type="date" id="par-serv"></div>
+      <div class="fg"><label>Fecha de parto (esperada o real)</label><input type="date" id="par-fecha"></div>
+      <div class="fg"><label>Padre / semental</label><input type="text" id="par-padre" placeholder="Nombre del semental"></div>
+      <div class="fg"><label>Estado</label>
+        <select id="par-estado">
+          <option value="esperando">⏳ Esperando</option>
+          <option value="exitoso">✅ Exitoso</option>
+          <option value="complicado">⚠️ Con complicaciones</option>
+          <option value="perdido">❌ Perdido</option>
+        </select>
+      </div>
+      <div class="fg"><label>Nombre de la cría</label><input type="text" id="par-cria" placeholder="Nombre si ya nació"></div>
+      <div class="fg"><label>Sexo de la cría</label>
+        <select id="par-sexo"><option value="">— Sin definir —</option><option value="macho">🐴 Macho</option><option value="hembra">🐎 Hembra</option></select>
+      </div>
+    </div>
+    <div class="fg"><label>Notas</label><textarea id="par-notas" placeholder="Complicaciones, veterinario, peso al nacer..." style="min-height:55px;"></textarea></div>
+    <div class="br"><button class="btn" onclick="saveParto()">💾 Guardar parto</button></div>
+    <div class="div"></div>
+    ${partos.length ? partos.map(p => `
+      <div class="hi">
+        <div class="hi-hd">
+          <span class="hi-d">${p.fecha_parto || p.fecha_servicio || '—'}</span>
+          <span class="hi-n" style="font-size:.84rem;">${{esperando:'⏳',exitoso:'✅',complicado:'⚠️',perdido:'❌'}[p.estado]||''} ${p.nombre_cria||'Cría sin nombre'}</span>
+          <button onclick="delParto('${p.id}')" class="fin-del">✕</button>
+        </div>
+        ${p.padre ? `<div style="font-family:var(--mono);font-size:.56rem;color:var(--txt3);margin-top:.2rem;">Padre: ${p.padre}</div>` : ''}
+        ${p.sexo_cria ? `<div style="font-family:var(--mono);font-size:.54rem;color:var(--txt3);margin-top:.1rem;">Cría: ${p.sexo_cria==='macho'?'🐴 Macho':'🐎 Hembra'}</div>` : ''}
+        ${p.notas ? `<div style="font-style:italic;font-size:.76rem;color:var(--txt2);margin-top:.18rem;">${p.notas}</div>` : ''}
+      </div>`).join('') : '<p style="font-size:.82rem;color:var(--txt3);">Sin partos registrados.</p>'}
+    `;
+  }
+
+  else if (cabTab === 'ficha') {
+    el.innerHTML = `
+    <div class="g2">
+      <div class="fg"><label>Nombre</label><input type="text" id="fic-nombre" value="${c.nombre||''}"></div>
+      <div class="fg"><label>Apodo</label><input type="text" id="fic-apodo" value="${c.apodo||''}"></div>
+      <div class="fg"><label>Raza</label><input type="text" id="fic-raza" value="${c.raza||''}"></div>
+      <div class="fg"><label>Color</label><input type="text" id="fic-color" value="${c.color||''}"></div>
+      <div class="fg"><label>Fecha de nacimiento</label><input type="date" id="fic-nac" value="${c.fecha_nacimiento||''}"></div>
+      <div class="fg"><label>Sexo</label>
+        <select id="fic-sexo">
+          <option value="macho" ${c.sexo==='macho'?'selected':''}>🐴 Macho</option>
+          <option value="yegua" ${c.sexo==='yegua'?'selected':''}>🐎 Yegua</option>
+          <option value="castrado" ${c.sexo==='castrado'?'selected':''}>🐴 Castrado</option>
+        </select>
+      </div>
+      <div class="fg"><label>Propietario</label><input type="text" id="fic-prop" value="${c.propietario||''}"></div>
+      <div class="fg"><label>Origen / procedencia</label><input type="text" id="fic-origen" value="${c.origen||''}"></div>
+    </div>
+    <div class="fg"><label>Notas generales</label><textarea id="fic-notas" style="min-height:65px;">${c.notas||''}</textarea></div>
+    <div class="fg" style="display:flex;align-items:center;gap:.6rem;">
+      <input type="checkbox" id="fic-activo" ${c.activo!==false?'checked':''} style="width:auto;cursor:pointer;">
+      <label for="fic-activo" style="font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;color:var(--txt2);text-transform:uppercase;cursor:pointer;">Caballo activo</label>
+    </div>
+    <div class="br">
+      <button class="btn" onclick="saveFicha()">💾 Guardar ficha</button>
+      <button class="btn danger sm" onclick="confirmarEliminarCaballo('${c.id}')">🗑 Eliminar</button>
+    </div>
+    `;
+  }
+}
+
+// ── NUEVO CABALLO ──
+function openNuevoCaballo() {
+  document.getElementById('mo-nuevo-cab-body').innerHTML = `
+  <div class="g2">
+    <div class="fg"><label>Nombre *</label><input type="text" id="nc-nombre" placeholder="Nombre del caballo"></div>
+    <div class="fg"><label>Apodo</label><input type="text" id="nc-apodo" placeholder="Apodo o alias"></div>
+    <div class="fg"><label>Raza</label><input type="text" id="nc-raza" placeholder="Ej: Cuarto de Milla"></div>
+    <div class="fg"><label>Color</label><input type="text" id="nc-color" placeholder="Ej: Alazán, Bayo..."></div>
+    <div class="fg"><label>Fecha de nacimiento</label><input type="date" id="nc-nac"></div>
+    <div class="fg"><label>Sexo</label>
+      <select id="nc-sexo"><option value="macho">🐴 Macho</option><option value="yegua">🐎 Yegua</option><option value="castrado">🐴 Castrado</option></select>
+    </div>
+    <div class="fg"><label>Propietario</label><input type="text" id="nc-prop" placeholder="Nombre del dueño"></div>
+    <div class="fg"><label>Origen</label><input type="text" id="nc-origen" placeholder="Hacienda o ciudad de origen"></div>
+  </div>
+  <div class="fg"><label>Notas iniciales</label><textarea id="nc-notas" placeholder="Cualquier información relevante..." style="min-height:55px;"></textarea></div>
+  <div class="br"><button class="btn" onclick="saveNuevoCaballo()">💾 Crear ficha</button><button class="btn ghost" onclick="closeM('mo-nuevo-cab')">Cancelar</button></div>
+  `;
+  openM('mo-nuevo-cab');
+}
+
+async function saveNuevoCaballo() {
+  const nombre = document.getElementById('nc-nombre')?.value.trim();
+  if (!nombre) { toast('⚠️ El nombre es obligatorio'); return; }
+  const ficha = {
+    nombre,
+    apodo: document.getElementById('nc-apodo')?.value.trim() || null,
+    raza: document.getElementById('nc-raza')?.value.trim() || null,
+    color: document.getElementById('nc-color')?.value.trim() || null,
+    fecha_nacimiento: document.getElementById('nc-nac')?.value || null,
+    sexo: document.getElementById('nc-sexo')?.value || 'macho',
+    propietario: document.getElementById('nc-prop')?.value.trim() || null,
+    origen: document.getElementById('nc-origen')?.value.trim() || null,
+    notas: document.getElementById('nc-notas')?.value.trim() || '',
+    activo: true,
+  };
+  try {
+    const { data, error } = await sb.from('caballos_fichas').insert(ficha).select().single();
+    if (error) throw error;
+    caballosData.push(data);
+    // También agregar a la lista simple de caballos para autocompletado en entrenos
+    updateCaballosList(nombre);
+    closeM('mo-nuevo-cab');
+    renderCaballosList();
+    toast('🐎 ' + nombre + ' agregado');
+  } catch(err) {
+    console.error(err);
+    toast('⚠️ Error al guardar: ' + (err.message || err));
+  }
+}
+
+// ── GUARDAR FICHA ──
+async function saveFicha() {
+  if (!curCaballo) return;
+  const updates = {
+    nombre: document.getElementById('fic-nombre')?.value.trim(),
+    apodo: document.getElementById('fic-apodo')?.value.trim() || null,
+    raza: document.getElementById('fic-raza')?.value.trim() || null,
+    color: document.getElementById('fic-color')?.value.trim() || null,
+    fecha_nacimiento: document.getElementById('fic-nac')?.value || null,
+    sexo: document.getElementById('fic-sexo')?.value,
+    propietario: document.getElementById('fic-prop')?.value.trim() || null,
+    origen: document.getElementById('fic-origen')?.value.trim() || null,
+    notas: document.getElementById('fic-notas')?.value || '',
+    activo: document.getElementById('fic-activo')?.checked !== false,
+    updated_at: new Date().toISOString(),
+  };
+  try {
+    await sb.from('caballos_fichas').update(updates).eq('id', curCaballo.id);
+    Object.assign(curCaballo, updates);
+    const idx = caballosData.findIndex(c => c.id === curCaballo.id);
+    if (idx >= 0) caballosData[idx] = { ...curCaballo };
+    renderCaballosList();
+    toast('✅ Ficha actualizada');
+  } catch(err) { toast('⚠️ Error: ' + err.message); }
+}
+
+// ── GUARDAR SANITARIO ──
+async function saveSanitario() {
+  if (!curCaballo) return;
+  const tipo = document.getElementById('san-tipo')?.value;
+  const desc = document.getElementById('san-desc')?.value.trim();
+  if (!tipo || !desc) { toast('⚠️ Tipo y descripción son obligatorios'); return; }
+  const record = {
+    caballo_id: curCaballo.id,
+    tipo,
+    descripcion: desc,
+    fecha: document.getElementById('san-fecha')?.value || today(),
+    fecha_proxima: document.getElementById('san-prox')?.value || null,
+    veterinario: document.getElementById('san-vet')?.value.trim() || null,
+    costo: parseInt(document.getElementById('san-costo')?.value) || 0,
+    observaciones: document.getElementById('san-obs')?.value.trim() || '',
+  };
+  try {
+    await sb.from('caballos_sanitario').insert(record);
+    toast('💉 Registro sanitario guardado');
+    await renderCabDetalle();
+    checkRecordatorios();
+  } catch(err) { toast('⚠️ Error: ' + err.message); }
+}
+
+async function delSanitario(id) {
+  try { await sb.from('caballos_sanitario').delete().eq('id', id); await renderCabDetalle(); toast('Registro eliminado'); }
+  catch(err) { toast('⚠️ Error: ' + err.message); }
+}
+
+// ── GUARDAR ENTRENO DE CABALLO ──
+async function saveCabEntreno() {
+  if (!curCaballo) return;
+  const desc = document.getElementById('cabe-desc')?.value.trim();
+  if (!desc) { toast('⚠️ Describe el trabajo realizado'); return; }
+  // Desactivar recordatorio anterior
+  try { await sb.from('caballos_entrenos').update({ recordatorio_activo: false }).eq('caballo_id', curCaballo.id); } catch(e) {}
+  const record = {
+    caballo_id: curCaballo.id,
+    fecha: document.getElementById('cabe-fecha')?.value || today(),
+    duracion_min: parseInt(document.getElementById('cabe-dur')?.value) || null,
+    tipo: document.getElementById('cabe-tipo')?.value || 'lazos',
+    descripcion: desc,
+    logros: document.getElementById('cabe-logros')?.value.trim() || null,
+    por_mejorar: document.getElementById('cabe-mejora')?.value.trim() || null,
+    recordatorio_activo: !!document.getElementById('cabe-mejora')?.value.trim(),
+  };
+  try {
+    await sb.from('caballos_entrenos').insert(record);
+    toast('🪢 Sesión de ' + curCaballo.nombre + ' guardada');
+    await renderCabDetalle();
+  } catch(err) { toast('⚠️ Error: ' + err.message); }
+}
+
+async function delCabEntreno(id) {
+  try { await sb.from('caballos_entrenos').delete().eq('id', id); await renderCabDetalle(); toast('Sesión eliminada'); }
+  catch(err) { toast('⚠️ Error: ' + err.message); }
+}
+
+async function marcarRecordatorio(id) {
+  try { await sb.from('caballos_entrenos').update({ recordatorio_activo: false }).eq('id', id); await renderCabDetalle(); toast('✓ Recordatorio visto'); }
+  catch(err) {}
+}
+
+// ── GUARDAR PARTO ──
+async function saveParto() {
+  if (!curCaballo) return;
+  const record = {
+    caballo_id: curCaballo.id,
+    fecha_parto: document.getElementById('par-fecha')?.value || null,
+    fecha_servicio: document.getElementById('par-serv')?.value || null,
+    padre: document.getElementById('par-padre')?.value.trim() || null,
+    estado: document.getElementById('par-estado')?.value || 'esperando',
+    nombre_cria: document.getElementById('par-cria')?.value.trim() || null,
+    sexo_cria: document.getElementById('par-sexo')?.value || null,
+    notas: document.getElementById('par-notas')?.value.trim() || '',
+  };
+  try {
+    await sb.from('caballos_partos').insert(record);
+    toast('🍼 Parto registrado');
+    await renderCabDetalle();
+  } catch(err) { toast('⚠️ Error: ' + err.message); }
+}
+
+async function delParto(id) {
+  try { await sb.from('caballos_partos').delete().eq('id', id); await renderCabDetalle(); toast('Registro eliminado'); }
+  catch(err) { toast('⚠️ Error: ' + err.message); }
+}
+
+// ── ELIMINAR CABALLO ──
+function confirmarEliminarCaballo(id) {
+  if (confirm('¿Eliminar a ' + curCaballo?.nombre + '? Se borrarán también sus registros sanitarios y de entrenamiento.')) {
+    eliminarCaballo(id);
+  }
+}
+
+async function eliminarCaballo(id) {
+  try {
+    await sb.from('caballos_fichas').delete().eq('id', id);
+    caballosData = caballosData.filter(c => c.id !== id);
+    closeM('mo-cab');
+    renderCaballosList();
+    toast('Caballo eliminado');
+  } catch(err) { toast('⚠️ Error: ' + err.message); }
+}
+
 
 function renderDash(){
   const eh=S.get('eHist')||[],cr=S.get('compResults')||{},fins=S.get('finanzas')||[],comps=getComps();
