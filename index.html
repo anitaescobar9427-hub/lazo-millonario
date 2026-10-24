@@ -2975,11 +2975,13 @@ async function saveESess(){
   }
   renderEHist();renderDash();toast('💾 Sesión '+eSesNum+' guardada · '+pct+'% efectividad');
   try{
-    await sb.from('entrenos').insert({
+    const {data,error}=await sb.from('entrenos').insert({
       fecha,sesion_num:eSesNum,tipo,caballo:caballo||null,duracion_min:dur?parseInt(dur):null,
       energia:eEnrg,foco,notas,lazos:lazosClean,efectivos:ef,fallidos:fa,total_marcados:tot,efectividad_pct:pct
-    });
-  }catch(err){console.warn('Error guardando entreno:',err);}
+    }).select('id').single();
+    if(error)throw error;
+    if(data?.id){localEntry._id=data.id;localBackup('eHist',S.get('eHist')||[]);}
+  }catch(err){console.warn('Error guardando entreno:',err);toast('⚠️ Guardado en el teléfono — revisa la conexión');}
 }
 function resetESess(){
   initELazos();
@@ -3010,9 +3012,27 @@ function renderEHist(){
     </div>
     <div class="hi-det" id="${det}">
       ${(s.lazos||[]).map((l,i)=>`<div style="display:flex;align-items:flex-start;gap:.4rem;padding:.25rem 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:.76rem;"><span style="font-family:var(--display);font-weight:700;width:22px;flex-shrink:0;color:${l.status==='ef'?'var(--musgo2)':l.status==='fa'?'var(--rojo2)':'var(--texto3)'};">${i+1}${l.status==='ef'?'✓':l.status==='fa'?'✗':'·'}</span><div>${l.caballo&&l.caballo!==s.caballo?`<span class="tag ta" style="font-size:.48rem;margin-right:.16rem;">🐎 ${l.caballo}</span>`:''}${(l.cats||[]).map(k=>`<span class="tag tr" style="font-size:.48rem;margin-right:.16rem;">${CATS[k]||k}</span>`).join('')}${l.notes?`<div style="font-style:italic;color:var(--texto2);font-size:.72rem;">${l.notes}</div>`:''}</div></div>`).join('')}
-      ${s.notes?`<div style="font-style:italic;color:var(--texto2);font-size:.74rem;margin-top:.28rem;">${s.notes}</div>`:''}
+      ${s.notes?`<div style="font-style:italic;color:var(--texto2);font-size:.74rem;margin-top:.28rem;">${escH(s.notes)}</div>`:''}
+      <div class="br"><button class="btn ghost sm" style="color:var(--leather);border-color:#deb9a0;" onclick="event.stopPropagation();borrarEntreno(${si})">🗑 Borrar este entreno</button></div>
     </div></div>`;
   }).join('');
+}
+
+async function borrarEntreno(idx){
+  const eh=S.get('eHist')||[];const s=eh[idx];if(!s)return;
+  const desc=`${s.f}${s.sesNum>1?' (sesión '+s.sesNum+')':''}${s.caballo?' en '+s.caballo:''} · ${s.ef||0} de ${s.tot||0} efectivos`;
+  if(!confirm('¿Borrar el entreno del '+desc+'?\n\nEsta acción no se puede deshacer.'))return;
+  eh.splice(idx,1);
+  _cache['eHist']=eh;localBackup('eHist',eh);
+  renderEHist();renderDash();renderRecordatorioUltimaSesion();
+  toast('🗑 Entreno borrado');
+  try{
+    let q=sb.from('entrenos').delete();
+    // Con id se borra exacto; sin id (entrenos guardados antes de esta versión) se busca por sus datos
+    q=s._id?q.eq('id',s._id):q.eq('fecha',s.f).eq('sesion_num',s.sesNum||1).eq('efectividad_pct',s.pct||0).eq('total_marcados',s.tot||0);
+    const {error}=await q;
+    if(error)throw error;
+  }catch(err){console.warn('Error borrando entreno:',err);toast('⚠️ Se borró del teléfono, pero no de la nube. Revisa la conexión');}
 }
 
 // ── FINANZAS ──
