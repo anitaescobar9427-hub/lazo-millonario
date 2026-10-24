@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vaquería Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{
@@ -663,6 +663,173 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   .vq-footer{flex-direction:column;}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+
+/* ════════ VAQUERA moderna: curvas suaves, contraste editorial reforzado ════════ */
+:root{
+  --ink:#142e24;--ink2:#1f3a2c;--paper:#f4f2e9;--paper2:#e5e5d7;--card:#fffef9;
+  --line:#c9cec1;--line2:#9da992;--muted:#505d51;--leather:#984025;--lime:#e4f39f;--lime2:#dce7bd;
+  --linen:#dce5c4;--sage:#d9e1c7;--sand:#eddbc3;
+  --txt2:#4f5e50;--txt3:#505d51;--txt4:#626e5e;--display:'DM Sans',Arial,sans-serif;
+}
+body{background:var(--paper);color:var(--ink);}
+/* Títulos: DM Sans compacto en lugar de serif */
+.vq-title h1,.vq-hero h2,.vq-section h2,.vq-box h3,.ct,.st,.mo-t,.ld-t,.cal-tit,.ci-n,.hi-n,.mantra-t,.af,.bc-l,.loading-logo{font-family:'DM Sans',Arial,sans-serif;font-style:normal;font-weight:600;}
+.vq-title h1{font-size:clamp(33px,3.8vw,51px);line-height:1.12;letter-spacing:-1.1px;max-width:790px;}
+.vq-title{margin:40px 0 30px;gap:22px;}
+.vq-title p{font-size:14px;margin-top:13px;color:#4c5b4b;}
+.vq-section{margin:32px 0 19px;}
+.vq-section h2{font-size:27px;letter-spacing:-1.1px;}
+.vq-section h2::before{font-size:13px;color:#875329;}
+.vq-box h3{font-size:23px;letter-spacing:-.6px;}
+.ct{font-size:20px;letter-spacing:-.5px;}
+.mo-t{font-size:24px;letter-spacing:-.6px;}
+.ld-t,.cal-tit{font-size:19px;letter-spacing:-.4px;}
+.ci-n,.hi-n{font-size:16px;letter-spacing:-.3px;}
+/* Cifras en DM Sans, no Georgia */
+.vq-stat strong,.sv,.ss-v,.lz-n,.ci-f,.hi-d,.cal-dn,.fin-amt,.vq-num,.je-d,.bc{font-family:'DM Sans',Arial,sans-serif;}
+p,.vq-box p,.vq-stat p{color:#4f5e50;}
+
+/* Marca y menú lateral */
+.brand{font-family:Georgia,serif;letter-spacing:1.6px;color:var(--ink);}
+.brand::after{color:#88532b;}
+.loading-logo{letter-spacing:1px;}
+.loading-logo::after{color:#88532b;}
+.vq-aside{background:#e5e5d7;border-right:1px solid #c7cebd;}
+.vq-tag{color:#5c604b;}
+.vq-nav button{border-radius:15px;padding:13px 16px;color:#3f5341;transition:background .18s,color .18s;}
+.vq-nav button:hover{background:#d3dac6;}
+.vq-nav button.active{background:var(--ink);color:#fffdf4;box-shadow:none;}
+.vq-sep{background:#c7cebd;}
+.avatar{background:#cdbb98;color:#332c1c;border-color:#a38c64;font-family:'DM Sans',sans-serif;}
+.aside-bottom small{color:#4c5947;}
+.vq-header{color:#465541;border-color:#c9cebf;}
+.vq-pill{background:#dce6bb;color:#34451f;border-radius:99px;}
+.vq-footer{color:#53604b;border-color:#c4cdba;line-height:1.6;}
+
+/* Bloque principal */
+.vq-hero,.mantra{border-radius:30px;background:radial-gradient(ellipse at 100% 0%,#29432d 0%,#152d22 50%,#0d2119 100%);box-shadow:0 14px 34px #243c3010;}
+.vq-hero{padding:43px;min-height:290px;color:#fffef6;}
+.vq-hero::after,.mantra::after{inset:14px;border-radius:19px;border-color:#d2c29855;}
+.vq-hero h2{font-size:clamp(33px,3.4vw,48px);line-height:1.1;letter-spacing:-1.8px;max-width:600px;}
+.vq-hero h2::first-line{color:#e7f5a6;}
+.vq-hero p{max-width:480px;font-size:14px;line-height:1.65;color:#e1e8d9;margin:20px 0 26px;}
+.vq-hero .vq-chip{border-radius:99px;background:#354b26;color:#eff7d0;border-color:#8a9a5c;padding:8px 12px;}
+.vq-art{color:#e4cb91;opacity:.85;}
+.vq-hero .btn.coral{background:var(--lime);color:#142b1b;box-shadow:none;}
+.vq-hero .btn.light{background:transparent;color:#eff7d0;border-color:#8a9a5c;}
+.mantra{padding:34px 30px;}
+.mantra-d{color:#d7e5a8;}
+.mantra-t{font-size:22px;line-height:1.45;letter-spacing:-.5px;color:#f4f8e6;}
+.mantra-t::first-line{color:#e7f5a6;}
+
+/* Tarjetas */
+.card,.vq-box,.vq-stat,.vq-tile,.hi,.ci,.je{border-radius:23px;border:1px solid #cbd1c1;background:var(--card);box-shadow:0 5px 20px #18322309;}
+.card,.vq-box{padding:25px;}
+.ci{border-left:5px solid var(--line);}
+.ci.si{border-left-color:var(--ink);}.ci.tal{border-left-color:#c58b62;}.ci.done{border-left-color:var(--leather);}.ci.no{border-left-color:#c9cec1;}
+.vq-box.note{background:var(--linen);border-color:#b6c69b;box-shadow:none;}
+.vq-box.note p{color:#354a30;}
+.vq-stats{gap:17px;margin-top:24px;}
+.vq-stat strong{font-weight:500;letter-spacing:-1.8px;font-size:39px;color:var(--ink);}
+.vq-stat small{font-size:10px;letter-spacing:1px;color:#4d5d49;}
+.vq-num{border-radius:12px;background:#d9e1c7;color:#2c442a;border:0;font-weight:600;}
+.vq-num.fa{background:#f1dccd;color:var(--leather);}
+.vq-row{padding:19px 0;border-color:#cfd7c4;}
+.vq-tile{padding:20px;transition:transform .18s,box-shadow .18s;}
+.vq-tile:hover{background:var(--card);border-color:#9faa91;transform:translateY(-1px);box-shadow:0 5px 14px #233b3012;}
+.vq-tile svg{color:#875329;}
+.sb,.ss-b{border-radius:18px;border-color:#cbd1c1;background:var(--card);}
+.sv{font-weight:500;letter-spacing:-1px;}
+.ss-v{font-weight:500;}
+
+/* Botones y controles */
+.btn{border-radius:99px;padding:13px 22px;min-height:46px;font-size:13px;background:var(--ink);color:#fff;transition:transform .18s,background .18s,box-shadow .18s;}
+.btn:hover{filter:none;transform:translateY(-1px);box-shadow:0 5px 14px #233b3012;}
+.btn:active{transform:translateY(0);}
+.btn.m,.btn.coral{background:var(--leather);box-shadow:none;}
+.btn.ghost,.btn.light{background:var(--card);color:var(--ink);border:1px solid #9faa91;}
+.btn.ghost:hover,.btn.light:hover{background:#fffef9;}
+.btn.sm{min-height:36px;padding:8px 15px;font-size:12px;}
+.fg input,.fg select,.fg textarea,.ld-ta,#coach-input{border-radius:14px;border:1px solid var(--line2);background:#fff;padding:13px 14px;color:var(--ink);}
+.fg input::placeholder,.fg textarea::placeholder,.ld-ta::placeholder{color:var(--txt4);opacity:1;}
+.fg input:focus,.fg select:focus,.fg textarea:focus,.ld-ta:focus{outline:2px solid #345e35;outline-offset:2px;box-shadow:none;border-color:var(--line2);}
+.fg label{color:#263d2b;}
+button:focus-visible,a:focus-visible{outline:3px solid var(--leather);outline-offset:4px;}
+.tag{border-radius:99px;padding:4px 10px;}
+.tc,.ta{background:var(--lime2);color:#354821;border-color:#c6d39c;}
+.tm{background:#ece4cf;color:#5a4a2c;border-color:#d8c9a6;}
+.tr{background:#f1dccd;color:var(--leather);border-color:#deb9a0;}
+.tg{background:#ebece2;color:var(--muted);border-color:var(--line);}
+.sess-pill,.coach-qbtn,.cal-nav button{border-radius:99px;border-color:#aab69a;background:var(--card);color:#223d25;padding:9px 16px;}
+.sess-pill.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+.coach-qbtn:hover{background:var(--lime2);}
+.tog,.ec{border-radius:99px;padding:8px 14px;}
+.tog-ef,.tog-fa,.ec{border-color:var(--line2);color:#203e27;}
+.tog-ef.on{background:var(--ink);border-color:var(--ink);color:#fff;box-shadow:0 5px 14px #253b3110;}
+.tog-fa.on,.ec.on{background:var(--leather);border-color:var(--leather);color:#fff;}
+
+/* Lazos */
+.lz{border-radius:16px;border-color:var(--line2);padding:.6rem .2rem .45rem;}
+.lz-n{font-weight:600;color:#a9b19d;}
+.lz.ef{background:var(--ink);border-color:var(--ink);}
+.lz.ef .lz-n,.lz.ef .lz-s{color:#e7f5a6;}
+.lz.fa{background:var(--leather);border-color:var(--leather);}
+.lz.active-l{box-shadow:0 0 0 3px var(--paper),0 0 0 5px #345e35;}
+.ld{border-radius:20px;background:#ebebdf;border-color:#cfd7c4;}
+
+/* Calendario */
+.cal-cell{border-radius:12px;border-color:#d3d8c9;}
+.cal-cell.today{border:2px solid var(--leather);}
+.cal-cell.ev-si{background:linear-gradient(130deg,#c8d69c,#e0e9c7);border-color:#a9b98a;}
+.cal-cell.ev-tal{background:linear-gradient(130deg,#e6c7aa,#f2e4d0);border-color:#d3ad8c;}
+.cal-dn{font-weight:600;color:#3d5135;}
+
+/* Barras y progreso */
+.bar-tr,.pt{background:#dde3cc;}
+.bar-fi.m,.bar-fi.c{background:#173d28;}.bar-fi.a{background:#82974e;}.bar-fi.r,.pf{background:var(--leather);}
+.fin-ing{color:#173d28;}.fin-eg{color:var(--leather);}
+
+/* Mental, cuaderno, coach */
+.af{background:var(--linen);border-left:4px solid #875329;border-radius:0 18px 18px 0;font-size:16px;font-weight:500;letter-spacing:-.2px;}
+.stop{border-radius:20px;background:#f3e3d6;border-color:#deb9a0;}
+.bc{border-width:2px;font-weight:600;}
+.msg-bubble{border-radius:20px;}
+.msg.coach .msg-bubble{border-radius:6px 20px 20px 20px;border-color:#cbd1c1;}
+.msg.user .msg-bubble{border-radius:20px 6px 20px 20px;background:var(--ink);}
+
+/* Hojas emergentes y avisos */
+.ov{background:#13251dc0;}
+.mo{background:#f7f5eb;border:1px solid #aeb99d;border-radius:27px 27px 0 0;padding:1.4rem 1.6rem 2.8rem;box-shadow:0 25px 90px #132b2a30;}
+.mo-x{color:var(--ink);}
+#toast{border-radius:99px;background:var(--ink);box-shadow:0 8px 30px #183d3320;}
+.vq-more button{border-color:#cfd7c4;}
+.vq-more svg{color:#875329;}
+
+@media(max-width:1100px){.vq-hero{padding:35px;}.vq-hero h2{font-size:38px;}}
+@media(max-width:700px){
+  .vq-title{margin:28px 0 24px;gap:12px;}
+  .vq-title h1{font-size:34px;letter-spacing:-1.2px;}
+  .vq-title p{font-size:12px;line-height:1.7;}
+  .vq-hero{padding:29px 25px;border-radius:25px;min-height:265px;}
+  .vq-hero::after{inset:10px;border-radius:17px;}
+  .vq-hero h2{font-size:34px;letter-spacing:-1.3px;}
+  .vq-hero p{font-size:13px;}
+  .vq-hero .btn{font-size:12px;}
+  .card,.vq-box{border-radius:20px;padding:21px;}
+  .vq-stats{gap:9px;}
+  .vq-stat{padding:17px 10px;border-radius:18px;}
+  .vq-stat strong{font-size:29px;letter-spacing:-1px;}
+  .vq-stat small{font-size:8px;letter-spacing:.7px;}
+  .vq-stat p{font-size:10px;}
+  .vq-section h2{font-size:23px;}
+  .vq-tile{border-radius:20px;}
+  .vq-bottom{background:#eeeee2fa;border-top-color:#b9c5ab;backdrop-filter:blur(16px);}
+  .vq-bottom button{border-radius:13px;padding:8px 9px;color:#43563b;}
+  .vq-bottom button.active{background:#d3e3ac;color:var(--ink);}
+  .mo{padding:1.3rem 1.3rem 2.6rem;border-radius:24px 24px 0 0;}
+  .vq-header{gap:8px;}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important;}}
 </style>
 </head>
 <body>
