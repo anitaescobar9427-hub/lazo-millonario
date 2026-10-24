@@ -4,10 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vaquería Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=DM+Mono:wght@300;400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{
   /* ── Fondo crema cálido ── */
@@ -414,81 +412,287 @@ body{background:var(--bg);color:var(--txt);font-family:var(--serif);min-height:1
   .hib-em{font-size:1.9rem;}
   .lz-grid{gap:.26rem;}
 }
+
+/* ════════ VAQUERA · western contemporáneo: cuero, lino y talabartería ════════ */
+:root{
+  --ink:#293e34;--ink2:#354a39;--muted:#7b776b;--line:#ded6c7;--line2:#d7cbb7;
+  --paper:#f7f3e9;--paper2:#eee8db;--card:#fffdf7;--leather:#a75332;--sand:#e8d4bf;--sage:#dbe0d1;--linen:#ebe6d4;
+  --bg:var(--paper);--bg2:var(--paper2);--bg3:#e6dccb;--bg4:var(--line2);
+  --verde:var(--ink);--verde2:var(--ink2);--verde3:#4f6b52;--verde4:#6f8a62;--verde-pale:var(--linen);--verde-pale2:var(--sage);
+  --oro:#7a3c22;--oro2:var(--leather);--oro3:#c0714d;--oro-pale:#f4e6da;
+  --txt:var(--ink);--txt2:#5d5a4e;--txt3:var(--muted);--txt4:#a9a294;
+  --rojo:#8a3a22;--rojo2:var(--leather);--rojo-pale:#f4e6da;
+  --borde:var(--line);--borde2:var(--line2);--borde3:#c8b89b;
+  --mono:'DM Sans',sans-serif;--serif:'DM Sans',sans-serif;--display:'Playfair Display',Georgia,serif;
+  --radio:8px;--sombra:none;--sombra2:0 2px 10px rgba(41,62,52,.08);
+}
+html{font-size:18px;}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 'DM Sans',sans-serif;}
+body::before,body::after{display:none;}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--leather);outline-offset:2px;}
+
+/* Carga */
+#loading-overlay{background:var(--paper);}
+.loading-logo{font:700 30px Georgia,serif;letter-spacing:2.2px;color:var(--ink);}
+.loading-logo::after{content:' ✧';color:var(--leather);font-weight:400;}
+.loading-sub{font-size:11px;letter-spacing:1.6px;color:var(--muted);text-transform:none;}
+.loading-bar::after{background:var(--leather);}
+
+/* Menú lateral */
+.vq-aside{position:fixed;inset:0 auto 0 0;width:244px;padding:38px 22px 26px;background:var(--paper2);border-right:1px solid #d9cfbc;display:flex;flex-direction:column;z-index:60;overflow-y:auto;}
+.brand{font:700 27px Georgia,serif;letter-spacing:2.2px;color:var(--ink);display:flex;align-items:center;gap:8px;cursor:pointer;background:none;border:0;padding:0;text-align:left;}
+.brand::after{content:'✧';color:var(--leather);font-size:24px;font-weight:400;}
+.vq-tag{font-size:9px;letter-spacing:1.7px;color:#8a7963;margin:9px 0 34px;}
+.vq-nav{display:grid;gap:4px;}
+.vq-nav button{display:flex;gap:13px;align-items:center;padding:11px 14px;border-radius:5px;border:0;background:none;color:#6d7b70;font:500 14px 'DM Sans',sans-serif;text-align:left;cursor:pointer;}
+.vq-nav button:hover{background:#e6dfcf;color:var(--ink);}
+.vq-nav button.active{background:var(--ink);color:#fff;box-shadow:inset 0 0 0 4px var(--ink),inset 0 0 0 5px #7b88735c;}
+.vq-nav svg,.vq-bottom svg{width:20px;height:20px;flex-shrink:0;}
+.vq-sep{height:1px;background:#d9cfbc;margin:10px 6px;}
+.aside-bottom{margin-top:auto;padding-top:22px;display:flex;align-items:center;gap:10px;font-size:12px;}
+.aside-bottom small{display:block;font-size:11px;color:var(--muted);margin-top:2px;}
+.avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#ddd2bb;color:#684a33;border:1px solid #c8b89b;font:600 15px Georgia,serif;flex-shrink:0;}
+
+/* Contenedor principal */
+.vq-main{margin-left:244px;padding:0 5%;max-width:1400px;min-height:100vh;}
+.vq-header{height:84px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:1.4px;}
+.vq-pill{font-size:11px;letter-spacing:0;background:#eae2d1;color:#665f4f;padding:8px 13px;border-radius:30px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%;}
+.vq-title{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin:34px 0 26px;}
+.vq-title h1{font:500 42px/1.1 'Playfair Display',Georgia,serif;letter-spacing:-1px;margin:0;}
+.vq-title p{margin:10px 0 0;font-size:14px;color:#718075;}
+.vq-footer{padding:30px 0 40px;margin-top:40px;border-top:1px solid #d9cfbc;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;}
+
+/* Hoy */
+.vq-hero{position:relative;overflow:hidden;isolation:isolate;background:linear-gradient(115deg,#263d32,#354a39);color:#fff;border-radius:9px;padding:38px;min-height:240px;display:flex;justify-content:space-between;align-items:center;gap:20px;}
+.vq-hero::after{content:'';position:absolute;inset:9px;border:1px dashed #c4ae7b55;border-radius:4px;z-index:-1;pointer-events:none;}
+.vq-hero h2{font:500 36px/1.15 'Playfair Display',Georgia,serif;max-width:540px;margin:0;}
+.vq-hero p{color:#dedfcd;max-width:460px;margin:15px 0 23px;font-size:14px;line-height:1.7;}
+.vq-hero .vq-chip{display:inline-block;background:#d6c39322;color:#ebdfc0;border:1px solid #d6c39333;border-radius:4px;padding:6px 10px;font-size:11px;margin-bottom:18px;}
+.vq-art{width:180px;flex-shrink:0;color:#d2ba86;transform:rotate(-13deg);opacity:.65;}
+.vq-art svg{width:100%;height:auto;display:block;}
+.vq-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:23px 0 30px;}
+.vq-stat{border:1px solid #ded5c4;border-radius:8px;background:var(--card);padding:22px;}
+.vq-stat small{display:block;font-size:11px;letter-spacing:.6px;color:var(--muted);}
+.vq-stat strong{font:400 34px Georgia,serif;display:block;margin:12px 0 6px;color:var(--ink);}
+.vq-stat p{font-size:12px;margin:0;color:#718075;}
+.vq-grid{display:grid;grid-template-columns:1.45fr 1fr;gap:22px;}
+.vq-section{display:flex;align-items:center;justify-content:space-between;margin:26px 0 16px;}
+.vq-section h2{font:500 25px 'Playfair Display',Georgia,serif;margin:0;}
+.vq-section h2::before{content:'✧';font:16px Georgia,serif;color:#a88a53;display:inline-block;margin-right:10px;vertical-align:middle;}
+.vq-box{border:1px solid #ded5c4;border-radius:8px;background:var(--card);padding:22px;}
+.vq-box.note{background:var(--linen);border-color:#ddd3bb;}
+.vq-box h3{font:500 22px 'Playfair Display',Georgia,serif;margin:6px 0 8px;}
+.vq-box p{font-size:13px;color:#718075;line-height:1.7;margin:0;}
+.vq-row{display:flex;align-items:center;gap:15px;padding:16px 0;border-bottom:1px solid var(--line);}
+.vq-row:last-child{border-bottom:0;}
+.vq-row b{font-weight:600;}
+.vq-row p{font-size:12px;margin-top:3px;}
+.vq-num{width:36px;height:36px;border-radius:5px;background:#eee7d7;border:1px solid #ddd1b8;color:#786044;display:grid;place-items:center;flex-shrink:0;font:600 13px Georgia,serif;}
+.vq-num.fa{background:#f4e6da;border-color:#e3c4ae;color:var(--leather);}
+.vq-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;}
+.vq-tile{display:flex;gap:14px;align-items:flex-start;text-align:left;border:1px solid #ded5c4;border-radius:8px;background:var(--card);padding:18px;cursor:pointer;color:var(--ink);font:inherit;}
+.vq-tile:hover{border-color:#c8b89b;background:#fffaf0;}
+.vq-tile svg{width:22px;height:22px;flex-shrink:0;color:var(--leather);margin-top:2px;}
+.vq-tile b{display:block;font-weight:600;font-size:14px;}
+.vq-tile span{display:block;font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* Botones */
+.btn{border:0;border-radius:5px;padding:11px 17px;background:var(--ink);color:#fff;font:500 13px 'DM Sans',sans-serif;letter-spacing:0;text-transform:none;box-shadow:none;}
+.btn:hover{background:var(--ink);filter:brightness(.92);transform:none;box-shadow:none;}
+.btn.m,.btn.coral{background:var(--leather);color:#fff;box-shadow:inset 0 0 0 3px var(--leather),inset 0 0 0 4px #efc6a74d;}
+.btn.ghost,.btn.light{background:var(--card);color:var(--ink);border:1px solid var(--line2);}
+.btn.ghost:hover,.btn.light:hover{background:#f4eee2;filter:none;}
+.btn.sm{padding:7px 12px;font-size:12px;}
+.btn.danger{background:#8a3a22;color:#fff;}
+
+/* Módulos: el título grande reemplaza los encabezados internos */
+.mod-content{max-width:920px;margin:0;padding:0 0 2rem;}
+.tab>.sl,.tab>.st{display:none;}
+.sl{font-size:11px;letter-spacing:.8px;color:var(--muted);text-transform:none;}
+.st{font:500 26px 'Playfair Display',Georgia,serif;color:var(--ink);}
+.st em{font-style:normal;color:var(--ink);}
+
+/* Tarjetas y componentes */
+.card{background:var(--card);border:1px solid #ded5c4;border-radius:8px;padding:20px 22px;box-shadow:none;margin-bottom:16px;}
+.card::before{display:none;}
+.ct{font:500 20px 'Playfair Display',Georgia,serif;color:var(--ink);margin-bottom:12px;}
+.stats{gap:12px;}
+.sb{background:var(--card);border:1px solid #ded5c4;border-radius:8px;padding:16px 10px;}
+.sv{font:400 28px Georgia,serif;}
+.sv.c,.sv.a{color:var(--ink);}.sv.m,.sv.am{color:#7a6a3c;}.sv.r{color:var(--leather);}
+.sl2{font-size:10px;letter-spacing:.5px;color:var(--muted);text-transform:none;}
+.fg label{font-size:12px;letter-spacing:0;text-transform:none;color:var(--ink);font-weight:500;}
+.fg input,.fg select,.fg textarea,.ld-ta{background:#fff;border:1px solid #ccd5c6;border-radius:7px;padding:11px 12px;font:15px 'DM Sans',sans-serif;color:var(--ink);}
+.fg input:focus,.fg select:focus,.fg textarea:focus,.ld-ta:focus{border-color:var(--ink);box-shadow:0 0 0 3px #293e3418;}
+.tag{border-radius:4px;font-size:11px;padding:3px 8px;}
+.tc,.ta{color:#536b45;background:#edf1e3;border-color:#d5ddc5;}
+.tm{color:#655a43;background:#eee7d5;border-color:#ddd1b8;}
+.tr{color:var(--leather);background:#f4e6da;border-color:#e3c4ae;}
+.tg{color:var(--muted);background:var(--paper2);border-color:var(--line);}
+.tam{color:#7a5a2a;background:#f1e5c8;border-color:#e0cfa5;}
+.pt{background:#e5e9da;height:6px;border-radius:9px;}
+.pf{background:var(--leather);}
+.div{background:var(--line);}
+
+/* Lazos: acierto en verde tinta, fallo en cuero */
+.lz{background:#fff;border:1px solid var(--line2);border-radius:5px;}
+.lz-n{font-family:Georgia,serif;color:#c9bfae;}
+.lz.ef{background:var(--ink);border-color:var(--ink);}
+.lz.ef .lz-n,.lz.ef .lz-s{color:#e8dfc3;}
+.lz.fa{background:var(--leather);border-color:var(--leather);}
+.lz.fa .lz-n,.lz.fa .lz-s{color:#fbe9dc;}
+.lz.active-l{box-shadow:0 0 0 3px var(--paper),0 0 0 5px #a88a53;}
+.lz.active-l .lz-n{color:var(--ink);}
+.lz.ef.active-l .lz-n,.lz.fa.active-l .lz-n{color:#fff;}
+.lz-dot{background:#d2ba86;}
+.ld{background:var(--paper2);border:1px solid var(--line);border-radius:8px;}
+.ld-t{font:500 19px 'Playfair Display',Georgia,serif;}
+.tog{border-radius:5px;font-size:12px;padding:7px 12px;}
+.tog-ef,.tog-fa{background:#fff;border-color:var(--line2);color:var(--ink);}
+.tog-ef.on{background:var(--ink);border-color:var(--ink);color:#fff;}
+.tog-fa.on{background:var(--leather);border-color:var(--leather);color:#fff;}
+.ecat-lbl{font-size:12px;letter-spacing:0;text-transform:none;color:var(--ink);}
+.ec{border-radius:5px;font-size:12px;padding:6px 10px;background:#fff;border-color:var(--line2);color:var(--ink);}
+.ec.on{background:var(--leather);border-color:var(--leather);color:#fff;}
+.ss-b{background:var(--card);border:1px solid #ded5c4;}
+.ss-v{font-family:Georgia,serif;font-weight:400;}
+.ss-ef{color:var(--ink);}.ss-fa{color:var(--leather);}.ss-nd{color:#c9bfae;}
+.ss-l{font-size:10px;text-transform:none;letter-spacing:.3px;}
+.sess-pill,.coach-qbtn{border-radius:5px;font-size:12px;padding:8px 13px;background:transparent;border:1px solid var(--line2);color:var(--ink);}
+.sess-pill.on{background:var(--ink);border-color:var(--ink);color:#fff;}
+.coach-qbtn:hover{background:#eee7d5;}
+
+/* Calendario y competencias */
+.cal-tit{font:500 22px 'Playfair Display',Georgia,serif;color:var(--ink);}
+.cal-nav button{border-radius:5px;background:var(--card);border-color:var(--line2);color:var(--ink);padding:6px 13px;}
+.cal-hdr{font-size:11px;color:var(--muted);text-transform:none;}
+.cal-cell{background:#fff;border-color:var(--line);border-radius:4px;min-height:52px;}
+.cal-cell.empty{background:transparent;border-color:transparent;}
+.cal-cell.today{border:1.5px solid var(--leather);}
+.cal-cell.ev-si{background:var(--sage);border-color:#b8c3a8;}
+.cal-cell.ev-tal{background:var(--sand);border-color:#dcc1a5;}
+.cal-cell.ev-pen{background:var(--card);border-color:var(--line2);}
+.cal-dn{font:12px Georgia,serif;color:var(--muted);}
+.cal-em{font-size:9px;}
+.cal-em.si{color:var(--ink);}.cal-em.tal{color:#7a4a2c;}.cal-em.pen{color:var(--muted);}
+.ci{background:var(--card);border:1px solid #ded5c4;border-left-width:4px;border-radius:8px;padding:16px 18px;}
+.ci.si{border-left-color:var(--ink);}.ci.tal{border-left-color:#c9956f;}.ci.pen{border-left-color:var(--line2);}.ci.no{border-left-color:#c9bfae;}.ci.done{border-left-color:var(--leather);}
+.ci-f{font:15px Georgia,serif;color:var(--leather);}
+.ci-n{font:500 17px 'Playfair Display',Georgia,serif;color:var(--ink);}
+.ci-l{font-size:12px;color:var(--muted);}
+
+/* Historiales, finanzas, barras */
+.hi{background:var(--card);border:1px solid #ded5c4;border-radius:8px;}
+.hi-d{font:13px Georgia,serif;color:var(--leather);}
+.hi-n{font:500 15px 'Playfair Display',Georgia,serif;}
+.hi-sc{font-size:12px;}
+.fin-row{border-color:var(--line);font-size:14px;}
+.fin-amt{font:14px Georgia,serif;}
+.fin-ing{color:var(--ink);}.fin-eg{color:var(--leather);}
+.bar-lbl{font-size:12px;color:var(--txt2);}
+.bar-tr{background:#e5e9da;height:7px;border-radius:9px;}
+.bar-fi{border-radius:9px;}
+.bar-fi.m,.bar-fi.c{background:var(--ink);}.bar-fi.r{background:var(--leather);}.bar-fi.a{background:#b5b48c;}
+.bar-n{font-size:12px;}
+
+/* Mental y cuaderno */
+.mantra{position:relative;isolation:isolate;background:linear-gradient(115deg,#263d32,#354a39);border:0;border-radius:9px;padding:30px;}
+.mantra::after{content:'';position:absolute;inset:8px;border:1px dashed #c4ae7b55;border-radius:4px;z-index:-1;}
+.mantra-d{font-size:11px;letter-spacing:1px;color:#d2ba86;}
+.mantra-t{font:italic 400 21px/1.55 'Playfair Display',Georgia,serif;color:#f1ead7;}
+.af{background:var(--linen);border-left:3px solid var(--leather);border-radius:0 6px 6px 0;font:italic 17px 'Playfair Display',Georgia,serif;color:var(--ink);}
+.stop{background:#f4e6da;border-color:#e3c4ae;}
+.stop-n{color:var(--leather);font-family:Georgia,serif;}
+.stop-t em{color:var(--ink);}
+.bc{border:1.5px solid var(--ink);background:var(--linen);color:var(--ink);font-family:Georgia,serif;font-weight:400;}
+.bc.inhale{background:var(--sage);}.bc.hold{background:var(--sand);border-color:var(--leather);}.bc.exhale{background:var(--paper);}
+.bc-l{font-family:'Playfair Display',Georgia,serif;}
+.je{background:var(--card);border-color:#ded5c4;}
+.je-d{font:13px Georgia,serif;color:var(--leather);}
+.cl li{border-color:var(--line);}
+.cl li.done .cb{background:var(--leather);border-color:var(--leather);}
+
+/* Coach */
+.msg.coach .msg-bubble{background:var(--card);border:1px solid #ded5c4;box-shadow:none;}
+.msg.user .msg-bubble{background:var(--ink);}
+.msg.coach .msg-avatar{background:var(--linen);border-color:#ddd3bb;}
+
+/* Hojas emergentes */
+.ov{background:#102a23a8;backdrop-filter:blur(4px);}
+.mo{background:var(--paper);border:1px solid #d7c9af;border-radius:12px 12px 0 0;box-shadow:none;}
+.mo::before{background:#cfc3ad;}
+.mo-t{font:500 24px 'Playfair Display',Georgia,serif;color:var(--ink);}
+.mo-x{background:transparent;border:0;font-size:22px;color:var(--ink);}
+#toast{background:var(--ink);border:0;border-radius:8px;font:500 14px 'DM Sans',sans-serif;padding:13px 22px;box-shadow:none;}
+
+/* Barra inferior (celular) y menú "Más" */
+.vq-bottom{display:none;}
+.vq-more{display:grid;gap:4px;}
+.vq-more button{display:flex;gap:14px;align-items:center;padding:14px 10px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:500 15px 'DM Sans',sans-serif;text-align:left;cursor:pointer;}
+.vq-more button:last-child{border-bottom:0;}
+.vq-more svg{width:22px;height:22px;color:var(--leather);flex-shrink:0;}
+.vq-more span{display:block;font-size:12px;color:var(--muted);font-weight:400;}
+
+@media(max-width:1100px){
+  .vq-aside{width:206px;padding:30px 16px 22px;}
+  .vq-main{margin-left:206px;padding:0 4%;}
+  .vq-art{display:none;}
+  .vq-grid{grid-template-columns:1fr;}
+  .vq-hero h2{font-size:30px;}
+}
+@media(max-width:700px){
+  .vq-aside{display:none;}
+  .vq-main{margin-left:0;padding:0 18px 92px;}
+  .vq-header{height:60px;font-size:9px;letter-spacing:.6px;}
+  .vq-pill{font-size:10px;padding:6px 10px;}
+  .vq-title{margin:24px 0 20px;}
+  .vq-title h1{font-size:32px;}
+  .vq-hero{padding:27px;min-height:0;}
+  .vq-hero h2{font-size:27px;}
+  .vq-stats{grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0 22px;}
+  .vq-stat{padding:14px 10px;}
+  .vq-stat strong{font-size:24px;}
+  .vq-stat small,.vq-stat p{font-size:10px;}
+  .vq-section h2{font-size:21px;}
+  .vq-tiles{grid-template-columns:1fr 1fr;gap:10px;}
+  .vq-tile{padding:14px;flex-direction:column;gap:8px;}
+  .vq-bottom{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:70;justify-content:space-around;align-items:center;background:#f7f3e9fa;border-top:1px solid #d9cfbc;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));backdrop-filter:blur(6px);}
+  .vq-bottom button{display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;color:#6d7b70;font:500 10px 'DM Sans',sans-serif;padding:6px 8px;cursor:pointer;}
+  .vq-bottom button.active{color:var(--leather);}
+  .card{padding:18px;}
+  .vq-footer{flex-direction:column;}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 </style>
 </head>
 <body>
 <div id="loading-overlay">
-  <div class="loading-logo">🪢 Vaquería Pro</div>
+  <div class="loading-logo">VAQUERA</div>
   <div class="loading-sub" id="loading-msg">Conectando con la nube...</div>
   <div class="loading-bar"></div>
 </div>
 
-<!-- ══ PANTALLA HOME ══ -->
-<div id="screen-home">
-  <div class="home-hero">
-    <div class="home-badge">Ana Isabel Escobar · Temporada 2026</div>
-    <div class="home-title">Vaquería <span style="font-style:italic;">Pro</span></div>
-    <div class="home-name">Sistema de Mejoramiento de Lazo</div>
-    <div class="home-prox" id="home-prox">Cargando competencia próxima...</div>
-  </div>
-  <div class="home-grid">
-    <div class="hib acc" onclick="openModule('dash','📊','Dashboard','Evolución y análisis')">
-      <div class="hib-em">📊</div>
-      <div class="hib-lbl">Dashboard</div>
-    </div>
-    <div class="hib pacc" onclick="openModule('cal','📅','Calendario','Competencias 2026')">
-      <div class="hib-em">📅</div>
-      <div class="hib-lbl">Calendario</div>
-    </div>
-    <div class="hib acc" onclick="openModule('comps','🏆','Competencias','Registro lazo a lazo')">
-      <div class="hib-em">🏆</div>
-      <div class="hib-lbl">Competencias</div>
-    </div>
-    <div class="hib gacc" onclick="openModule('entrenos','🪢','Entrenos','Sesiones y lazos')">
-      <div class="hib-em">🪢</div>
-      <div class="hib-lbl">Entrenos</div>
-    </div>
-    <div class="hib pacc" onclick="openModule('finanzas','💰','Finanzas','Premios y gastos')">
-      <div class="hib-em">💰</div>
-      <div class="hib-lbl">Finanzas</div>
-    </div>
-    <div class="hib gacc" onclick="openModule('mental','🧠','Rutina Mental','Preparación y foco')">
-      <div class="hib-em">🧠</div>
-      <div class="hib-lbl">Mental</div>
-    </div>
-    <div class="hib acc" onclick="openModule('cuaderno','📓','Cuaderno','Diario y reflexiones')">
-      <div class="hib-em">📓</div>
-      <div class="hib-lbl">Cuaderno</div>
-    </div>
-    <div class="hib gacc" onclick="openModule('caballos','🐎','Mis Caballos','Fichas y seguimiento')">
-      <div class="hib-em">🐎</div>
-      <div class="hib-lbl">Caballos</div>
-      <div class="hib-badge">NUEVO</div>
-    </div>
-    <div class="hib acc-verde" onclick="openModule('coach','🤖','Mi Coach IA','Análisis y consejos personalizados')">
-      <div class="hib-em">🤖</div>
-      <div class="hib-lbl">Coach IA</div>
-      <div class="hib-badge">IA</div>
-    </div>
-    <div class="hib" onclick="openModule('sync','🔄','Sync','Exportar e importar')">
-      <div class="hib-em">🔄</div>
-      <div class="hib-lbl">Sync</div>
-    </div>
-  </div>
-</div>
+<aside class="vq-aside">
+  <button class="brand" onclick="goHome()" aria-label="Ir a Hoy">VAQUERA</button>
+  <small class="vq-tag">DISCIPLINA QUE DEJA HUELLA</small>
+  <nav class="vq-nav" id="vq-nav" aria-label="Secciones"></nav>
+  <div class="aside-bottom"><span class="avatar">A</span><div><b>Ana Isabel</b><small>Una sesión a la vez</small></div></div>
+</aside>
 
-<!-- ══ VISTA DE MÓDULO ══ -->
-<div id="module-view">
-  <div class="module-header">
-    <button class="mod-back" onclick="goHome()">←</button>
-    <div class="mod-em" id="mod-em">📊</div>
-    <div>
-      <div class="mod-title" id="mod-title">Dashboard</div>
-      <div class="mod-sub" id="mod-sub">Evolución y análisis</div>
-    </div>
-  </div>
-  <div class="mod-nav" id="mod-nav" style="display:none;"></div>
-  <div class="mod-content">
+<div class="vq-main">
+  <header class="vq-header">
+    <span id="vq-crumb">MI CENTRO DE ENTRENAMIENTO</span>
+    <span class="vq-pill" id="home-prox">Cargando…</span>
+  </header>
+
+  <!-- ══ HOY ══ -->
+  <div id="screen-home"></div>
+
+  <!-- ══ MÓDULO ══ -->
+  <div id="module-view">
+    <div class="vq-title"><div><h1 id="mod-title"></h1><p id="mod-sub"></p></div></div>
+    <span id="mod-em" hidden></span><div id="mod-nav" hidden></div>
+<div class="mod-content">
 <div id="tab-dash" class="tab active">
   <div class="sl">Vista general</div><div class="st">Mi <em>evolución</em></div>
   <div class="stats" id="dash-stats"></div>
@@ -731,7 +935,19 @@ body{background:var(--bg);color:var(--txt);font-family:var(--serif);min-height:1
 </div>
 
 </div><!-- end mod-content -->
-</div><!-- end module-view -->
+  </div><!-- end module-view -->
+  <footer class="vq-footer"><span>VAQUERA · Entrena con intención. Compite con confianza.</span><span>Tus datos se guardan en la nube.</span></footer>
+</div><!-- end vq-main -->
+
+<nav class="vq-bottom" id="vq-bottom" aria-label="Navegación principal"></nav>
+
+<div class="ov" id="mo-mas">
+  <div class="mo">
+    <button class="mo-x" onclick="closeM('mo-mas')" aria-label="Cerrar">×</button>
+    <div class="mo-t">Todo tu sistema</div>
+    <div class="vq-more" id="vq-more"></div>
+  </div>
+</div>
 <div id="toast"></div>
 
 <!-- Modal detalle caballo -->
@@ -963,17 +1179,68 @@ function fillSel(selId){
 // NAVEGACIÓN — home + módulos
 // ══════════════════════════════════════
 let currentModule = null;
+const SVG = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const ICON = {
+  hoy: SVG('<path d="m3 10 9-7 9 7v10H7V10m3 10v-6h4v6"/>'),
+  entrenos: SVG('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="m16 8 5-5"/>'),
+  comps: SVG('<path d="M5 21V3m0 1c5-4 9 4 14 0v10c-5 4-9-4-14 0"/>'),
+  dash: SVG('<path d="M4 19V5m0 14h16M8 14l4-4 4 2 5-7m-5 0h5v5"/>'),
+  cal: SVG('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4m8-4v4"/>'),
+  caballos: SVG('<path d="M7 20c-2-3-3-6-3-9a8 8 0 0 1 16 0c0 3-1 6-3 9M7 20H5m12 0h2"/><path d="M7.5 9h.01M16.5 9h.01M6.5 14h.01M17.5 14h.01"/>'),
+  coach: SVG('<path d="M4 5h16v11H9l-5 4V5z"/><path d="M8 10h8M8 13h5"/>'),
+  finanzas: SVG('<circle cx="12" cy="12" r="8"/><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.4 0-2.5.8-2.5 2s1.1 1.6 2.5 2 2.5.8 2.5 2-1.1 2-2.5 2c-1 0-2-.5-2.5-1.5M12 6.5V8m0 8v1.5"/>'),
+  mental: SVG('<path d="M12 3a6 6 0 0 0-6 6c0 2.2 1.2 3.6 2 4.5V17h8v-3.5c.8-.9 2-2.3 2-4.5a6 6 0 0 0-6-6zM10 21h4"/>'),
+  cuaderno: SVG('<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4zm0 13a3 3 0 0 1 3-3h11M9 8h6"/>'),
+  sync: SVG('<path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/>'),
+  mas: SVG('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'),
+};
+// [id, emoji, título grande, subtítulo, nombre corto en el menú]
+const MODS = [
+  ['entrenos','🪢','Entra en tu mejor ritmo.','Registra cada lazo. Mantén tu atención en la pista.','Entrenar'],
+  ['comps','🏆','Tu temporada, lazo a lazo.','Inscripciones, caballos y resultados de cada competencia.','Competencias'],
+  ['cal','📅','Tu calendario 2026.','Decide a qué vas, a qué tal vez y a qué no.','Calendario'],
+  ['dash','📈','Cada lazo cuenta.','Tu evolución, con contexto y sin comparaciones vacías.','Progreso'],
+  ['caballos','🐎','Tus compañeros de pista.','Fichas, plan sanitario, entrenos y partos.','Caballos'],
+  ['coach','🤠','Tu coach, con tus datos.','Pregunta lo que necesites para rendir mejor.','Coach'],
+  ['finanzas','💰','Que el lazo se pague solo.','Premios, gastos y autosostenibilidad.','Finanzas'],
+  ['mental','🧠','La confianza se entrena.','Rutina previa, técnica STOP y reflexión.','Mental'],
+  ['cuaderno','📓','Lo que aprendes también cuenta.','Tu diario y la Carta de la Campeona.','Cuaderno'],
+  ['sync','🔄','Tus registros, a mano.','Exporta o importa una copia de seguridad.','Respaldo'],
+];
+const MAIN_NAV = ['entrenos','comps','dash'];
+
+function go(id){
+  const m = MODS.find(x => x[0] === id); if (!m) return goHome();
+  openModule(m[0], m[1], m[2], m[3]);
+}
+function renderShell(){
+  const btn = (id, label, extra='') => `<button data-nav="${id}" onclick="${id==='hoy'?'goHome()':id==='mas'?"openM('mo-mas')":`go('${id}')`}" ${extra}>${ICON[id]}${label}</button>`;
+  document.getElementById('vq-nav').innerHTML =
+    btn('hoy','Hoy') + MODS.slice(0,6).map(m=>btn(m[0],m[4])).join('') +
+    '<div class="vq-sep"></div>' + MODS.slice(6).map(m=>btn(m[0],m[4])).join('');
+  document.getElementById('vq-bottom').innerHTML =
+    btn('hoy','Hoy') + MAIN_NAV.map(id=>btn(id,MODS.find(m=>m[0]===id)[4])).join('') + btn('mas','Más');
+  document.getElementById('vq-more').innerHTML = MODS.filter(m=>!MAIN_NAV.includes(m[0])).map(m =>
+    `<button onclick="closeM('mo-mas');go('${m[0]}')">${ICON[m[0]]}<div>${m[4]}<span>${m[3]}</span></div></button>`).join('');
+}
+function markNav(id){
+  document.querySelectorAll('[data-nav]').forEach(b => {
+    const on = b.dataset.nav === id || (b.dataset.nav === 'mas' && id !== 'hoy' && !MAIN_NAV.includes(id));
+    b.classList.toggle('active', on);
+  });
+  const crumb = document.getElementById('vq-crumb');
+  if (crumb) crumb.textContent = ['comps','cal'].includes(id) ? 'MI TEMPORADA · COMPETENCIAS' : id==='caballos' ? 'MI CUADRA' : 'MI CENTRO DE ENTRENAMIENTO';
+}
 
 function openModule(id, em, title, sub) {
   currentModule = id;
   document.getElementById('screen-home').style.display = 'none';
   document.getElementById('module-view').style.display = 'block';
   document.getElementById('mod-em').textContent = em;
-  document.getElementById('mod-title').textContent = title;
+  document.getElementById('mod-title').textContent = title + ' ' + em;
   document.getElementById('mod-sub').textContent = sub;
-  // Activar tab correspondiente
+  markNav(id);
   T(id);
-  // Scroll to top
   window.scrollTo(0, 0);
 }
 
@@ -981,7 +1248,71 @@ function goHome() {
   document.getElementById('module-view').style.display = 'none';
   document.getElementById('screen-home').style.display = 'block';
   currentModule = null;
+  markNav('hoy');
+  renderHoy();
   window.scrollTo(0, 0);
+}
+
+const escH = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LASSO = '<svg viewBox="0 0 200 210" fill="none" aria-hidden="true"><ellipse cx="92" cy="80" rx="60" ry="68" stroke="currentColor" stroke-width="2.5"/><ellipse cx="92" cy="80" rx="54" ry="62" stroke="currentColor" stroke-width="1" stroke-dasharray="2 4"/><path d="M126 128c-30 26-46 20-39 4 7-17 41-8 45 14 4 23-32 24-19 45 4 7 14 10 23 10M135 195l9 8m-12-4 7 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>';
+
+function renderHoy(){
+  const el = document.getElementById('screen-home'); if (!el) return;
+  const eh = S.get('eHist') || [];
+  const marc = eh.reduce((a,x)=>a+(x.tot||0),0), efs = eh.reduce((a,x)=>a+(x.ef||0),0);
+  const pct = marc ? Math.round(efs/marc*100) : null;
+  const ult = eh[0];
+  const prox = getComps().find(c => c.f >= today() && getA(c.id) !== 'no');
+  const dias = prox ? Math.ceil((new Date(prox.f+'T12:00:00') - new Date(today()+'T12:00:00'))/86400000) : null;
+  const fechaCorta = f => new Date(f+'T12:00:00').toLocaleDateString('es-CO',{day:'numeric',month:'short'}).replace('.','');
+  const foco = S.get('foco_'+today());
+  const proxNombre = prox ? prox.n.replace(/^[^\wÁÉÍÓÚÑáéíóúñ]+/,'').trim() : '';
+
+  // Errores para corregir (última sesión)
+  const LBL = {timing:'Timing',apertura:'Apertura del lazo',velocidad:'Velocidad',posicion:'Posición en el caballo',mental:'Concentración',distancia:'Distancia al animal',soltada:'Soltada',otro:'Otro'};
+  const errs = {};
+  (ult?.lazos||[]).filter(l=>l.status==='fa').forEach(l=>(l.cats||[]).forEach(k=>errs[k]=(errs[k]||0)+1));
+  const errList = Object.entries(errs).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const notas = (ult?.lazos||[]).map((l,i)=>({i:i+1,l})).filter(x=>x.l.status==='fa'&&x.l.notes?.trim()).slice(0,3);
+  let corregir;
+  if (!ult) corregir = '<div class="vq-row"><p>Cuando registres tu primer entreno, aquí verás qué corregir en el siguiente.</p></div>';
+  else if (!errList.length && !notas.length) corregir = `<div class="vq-row"><span class="vq-num">✓</span><div><b>Sin errores marcados en tu última sesión</b><p>${escH(ult.f)} · ${ult.ef||0} de ${ult.tot||0} efectivos. Mantén la misma preparación.</p></div></div>`;
+  else corregir = errList.map(([k,v])=>`<div class="vq-row"><span class="vq-num fa">${v}</span><div><b>${LBL[k]||k}</b><p>Se repitió ${v} ${v===1?'vez':'veces'} en tu última sesión.</p></div></div>`).join('')
+    + notas.map(n=>`<div class="vq-row"><span class="vq-num">L${n.i}</span><div><b>Lazo ${n.i}</b><p>${escH(n.l.notes)}</p></div></div>`).join('');
+
+  el.innerHTML = `
+  <div class="vq-title"><div><h1>Tu siguiente nivel, Ana. 🐎</h1><p>Una intención clara. Un lazo mejor que el anterior.</p></div></div>
+  <section class="vq-hero">
+    <div>
+      <span class="vq-chip">${foco ? 'Tu foco de hoy' : 'Sin foco definido para hoy'}</span>
+      <h2>${foco ? escH(foco) : 'La confianza se entrena. Lazo a lazo.'}</h2>
+      <p>${prox ? `Faltan ${dias} ${dias===1?'día':'días'} para ${escH(proxNombre)}. Cada sesión de esta semana cuenta.` : 'Define tus próximas competencias en el calendario para planear tu preparación.'}</p>
+      <div class="br" style="margin-top:0;"><button class="btn coral" onclick="go('entrenos')">Comenzar entrenamiento</button><button class="btn light" onclick="go('coach')">Pedir consejo al coach</button></div>
+    </div>
+    <div class="vq-art">${LASSO}</div>
+  </section>
+  <div class="vq-stats">
+    <div class="vq-stat"><small>EFECTIVIDAD</small><strong>${pct===null?'—':pct+' %'}</strong><p>${marc?`${efs} efectivos de ${marc} lazos`:'Registra tu primer entreno'}</p></div>
+    <div class="vq-stat"><small>ÚLTIMO ENTRENO</small><strong>${ult?(ult.pct||0)+' %':'—'}</strong><p>${ult?fechaCorta(ult.f)+(ult.caballo?' · '+escH(ult.caballo):''):'Aún sin sesiones'}</p></div>
+    <div class="vq-stat"><small>PRÓXIMA COMPETENCIA</small><strong>${prox?fechaCorta(prox.f):'—'}</strong><p>${prox?escH(prox.l||''):'Sin fecha definida'}</p></div>
+  </div>
+  <div class="vq-grid">
+    <div>
+      <div class="vq-section"><h2>Lo que debes corregir hoy</h2></div>
+      <div class="vq-box">${corregir}</div>
+    </div>
+    <div>
+      <div class="vq-section"><h2>Camino a competir</h2></div>
+      <div class="vq-box note">
+        ${prox ? `<small style="font-size:11px;color:var(--muted);">${getA(prox.id)==='si'?'Confirmada':'Por confirmar'} · en ${dias} ${dias===1?'día':'días'}</small>
+        <h3>${escH(proxNombre)}</h3><p>${escH(prox.f)} · ${escH(prox.l||'')}<br>Registra aquí tus inscripciones, caballos y cada lazo.</p><br>
+        <button class="btn light" onclick="openCompModal(getComps().find(c=>c.id==='${prox.id}'))">Abrir competencia</button>`
+        : `<h3>Sin competencias próximas</h3><p>Marca en el calendario a cuáles vas a asistir.</p><br><button class="btn light" onclick="go('cal')">Ir al calendario</button>`}
+      </div>
+    </div>
+  </div>
+  <div class="vq-section"><h2>Todo tu sistema</h2></div>
+  <div class="vq-tiles">${MODS.map(m=>`<button class="vq-tile" onclick="go('${m[0]}')">${ICON[m[0]]}<div><b>${m[4]}</b><span>${m[3]}</span></div></button>`).join('')}</div>`;
 }
 
 function T(id){
@@ -1330,13 +1661,13 @@ async function init(){
   const mdEl=document.getElementById('mantra-d');if(mdEl)mdEl.textContent='HOY · '+ds.toUpperCase();
   const jdEl=document.getElementById('j-d');if(jdEl)jdEl.textContent=ds.charAt(0).toUpperCase()+ds.slice(1);
   const af=S.get('mi-af');if(af){const el=document.getElementById('mi-af');if(el){el.textContent=af;el.style.display='block';}}
-  updateHdr();initELazos();initFoco();
+  renderShell();updateHdr();initELazos();initFoco();goHome();
 }
 
 function updateHdr(){
-  const prox=getComps().find(c=>c.f>=today()&&['si','pen'].includes(getA(c.id)));
+  const prox=getComps().find(c=>c.f>=today()&&getA(c.id)!=='no');
   const el=document.getElementById('home-prox');if(!el)return;
-  if(prox){const diff=Math.ceil((new Date(prox.f+' 12:00:00')-new Date())/86400000);el.textContent=diff>0?'Próxima: '+prox.n.replace(/^[^\w]*\s*/,'').substring(0,26)+' — '+diff+' días':diff===0?'🏆 ¡Hoy compites!':'·';}
+  if(prox){const diff=Math.round((new Date(prox.f+'T12:00:00')-new Date(today()+'T12:00:00'))/86400000);el.textContent=diff>0?'● Próxima: '+prox.n.replace(/^[^\w]*\s*/,'').substring(0,28)+' · '+diff+' días':diff===0?'🏆 ¡Hoy compites!':'·';}
   else el.textContent='Sin competencias próximas definidas';
 }
 
