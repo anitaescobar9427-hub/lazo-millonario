@@ -929,7 +929,8 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--leather);outline-of
           <div class="ec" onclick="tEC(this,'soltada')">🤚 Soltada</div><div class="ec" onclick="tEC(this,'otro')">+ Otro</div>
         </div>
       </div>
-      <div class="fg" style="margin-bottom:.45rem;"><label>🐎 Caballo de este lazo</label><input type="text" id="e-lz-cab" list="e-caballos-list" placeholder="Si lo dejas vacío, usa el caballo de la sesión"></div>
+      <div class="g2"><div class="fg" style="margin-bottom:.45rem;"><label>🐎 Caballo de este lazo</label><input type="text" id="e-lz-cab" list="e-caballos-list" placeholder="Si lo dejas vacío, usa el de la sesión"></div>
+      <div class="fg" style="margin-bottom:.45rem;"><label>⏱ Tiempo (segundos, si aplica)</label><input type="text" id="e-lz-t" inputmode="decimal" autocomplete="off" placeholder="Ej: 8,45"></div></div>
       <textarea class="ld-ta" id="e-ta" placeholder="Observaciones de este lazo..."></textarea>
       <div class="br"><button class="btn sm" onclick="saveEL()">Guardar → siguiente</button><button class="btn ghost sm" onclick="clearEL()">Limpiar</button></div>
     </div>
@@ -1559,7 +1560,11 @@ function buildCoachContext() {
     const fa = lzs.filter(l => l.status === 'fa').length;
     const pct = lzs.filter(l => l.status).length > 0
       ? Math.round(ef / lzs.filter(l => l.status).length * 100) : 0;
-    return `${c.n?.replace(/^[^\w]*\s*/,'').substring(0,40)} (${c.f?.slice(0,7)}): ${ef}✓ ${fa}✗ ${pct}%${res.notasGen ? ' — ' + res.notasGen.substring(0, 80) : ''}`;
+    const insTxt = (res.inscripciones || []).map(i => {
+      const dias = (i.dias || []).map((d, k) => { const L = d.lazos || []; if (!L.length) return ''; const e = L.filter(l => l.status === 'ef').length, m = L.filter(l => l.status).length; return `día ${k+1}: ${e}/${L.length}`; }).filter(Boolean).join(', ');
+      return `${i.categoria || 'categoría'}${i.caballo ? ' con ' + i.caballo : ''}: ${i.puesto ? 'puesto ' + i.puesto + (i.totalComp ? ' de ' + i.totalComp : '') : 'sin puesto registrado'}${dias ? ' [' + dias + ']' : ''}`;
+    }).join('; ');
+    return `${c.n?.replace(/^[^\w]*\s*/,'').substring(0,40)} (${c.f?.slice(0,7)}): ${ef}✓ ${fa}✗ ${pct}%${insTxt ? ' | ' + insTxt : ''}${res.notasGen ? ' — ' + res.notasGen.substring(0, 80) : ''}`;
   });
 
   // Próximas competencias
@@ -1603,6 +1608,8 @@ ESTADÍSTICAS GLOBALES:
 
 ERRORES MÁS FRECUENTES (entrenos + competencias combinados):
 ${errTop.length ? errTop.map(e => '- ' + e).join('\n') : '- Sin errores categorizados aún'}
+
+TIEMPOS DE LAZO (últimas sesiones cronometradas): ${eh.slice(0,5).map(x=>tiemposTxt(x.lazos)).filter(Boolean).map(t=>t.replace('⏱ ','')).join(' | ') || 'sin tiempos registrados'}
 
 ÚLTIMAS 3 SESIONES:
 ${ultimasSesiones.length ? ultimasSesiones.map(s => '- ' + s).join('\n') : '- Sin sesiones aún'}
@@ -2365,6 +2372,7 @@ function renderDash(){
     <div class="sb"><span class="sv c">${eh.length}</span><span class="sl2">🪢 Entrenos</span></div>
     <div class="sb"><span class="sv m">${pct}%</span><span class="sl2">📈 Efectividad</span></div>
     <div class="sb"><span class="sv a">${cdone}</span><span class="sl2">🏆 Competencias</span></div>
+    <div class="sb"><span class="sv am">${podiosCount()}</span><span class="sl2">🥇 Podios</span></div>
     <div class="sb"><span class="sv c">${racha}</span><span class="sl2">🔥 Racha</span></div>
     <div class="sb"><span class="sv ${saldo>=0?'m':'r'}" style="font-size:1.1rem;">${fmtCOP(saldo)}</span><span class="sl2">💰 Saldo</span></div>`;
   // Gráfico efectividad
@@ -2388,7 +2396,7 @@ function renderDash(){
     const c=comps.find(x=>x.id===k)||{n:k};
     const pp=marcados>0?Math.round(ef/marcados*100):0;
     // Inscripciones de la competencia (si existen)
-    const inscrLabel=r.inscripciones&&r.inscripciones.length>1?` <span style="font-size:.5rem;color:var(--txt3);">(${r.inscripciones.length} inscr.)</span>`:'';
+    const mpD=mejorPuesto(r);const inscrLabel=(mpD?` <span style="font-size:12px;">${MEDAL(mpD.puesto)||mpD.puesto+'.º'}</span>`:'')+(r.inscripciones&&r.inscripciones.length>1?` <span style="font-size:.5rem;color:var(--txt3);">(${r.inscripciones.length} inscr.)</span>`:'');
     return`<div class="bar-row">
       <div class="bar-lbl" style="width:110px;">${c.n.replace(/^[^\w]*\s*/,'').substring(0,16)}${inscrLabel}</div>
       <div class="bar-tr"><div class="bar-fi m" style="width:${pp}%"></div></div>
@@ -2486,6 +2494,7 @@ function ciH(c){
       <span class="tag ${a==='si'?'tm':a==='tal'?'ta':a==='no'?'tr':'tg'}">${aL}</span>
       ${c.tipo?`<span class="tag tc">${c.tipo}</span>`:''}
       ${res?`<span class="tag tm">${ef}✓</span>`:''}
+      ${res&&mejorPuesto(res)?`<span class="tag tam">${puestoTxt(mejorPuesto(res))}</span>`:''}
     </div></div>
     <button onclick="event.stopPropagation();openEdit('${c.id}')" style="background:none;border:none;cursor:pointer;color:var(--texto3);font-size:.78rem;align-self:flex-start;margin-left:auto;">✏️</button>
     </div></div>`;
@@ -2516,47 +2525,75 @@ async function saveEdit(id){
 }
 
 // ── COMP MODAL ──
-let curC=null,cLz=[],cAL=0,cInscripciones=[],cIns=0,cNotasGen='';
+let curC=null,cLz=null,cAL=0,cInscripciones=[],cIns=0,cDia=0,cNotasGen='';
 const lzBlank=n=>Array.from({length:n},()=>({status:null,cats:[],notes:''}));
 const lzClone=l=>({status:l.status??null,cats:[...(l.cats||[])],notes:l.notes||''});
+const lzScore=L=>{const ef=L.filter(l=>l.status==='ef').length,m=L.filter(l=>l.status).length;return{ef,fa:m-ef,m,total:L.length,pct:m?Math.round(ef/m*100):0};};
+const MEDAL=p=>p==1?'🥇':p==2?'🥈':p==3?'🥉':'';
+function puestoTxt(i){if(!i||!i.puesto)return '';const m=MEDAL(i.puesto);return `${m?m+' ':''}${i.puesto}.º${i.totalComp?' de '+i.totalComp:''}`;}
+function compNumDias(c){if(!c?.f||!c?.ff)return 1;const n=Math.round((new Date(c.ff+'T12:00:00')-new Date(c.f+'T12:00:00'))/86400000)+1;return Math.max(1,Math.min(7,n||1));}
+function compDiaISO(c,k){const d=new Date(c.f+'T12:00:00');d.setDate(d.getDate()+k);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function compDiaLbl(c,k){return new Date(compDiaISO(c,k)+'T12:00:00').toLocaleDateString('es-CO',{weekday:'short',day:'numeric',month:'short'}).replace(/\./g,'');}
+const insAll=i=>(i.dias||[]).flatMap(d=>d.lazos||[]);
+function podiosCount(){let n=0;Object.values(S.get('compResults')||{}).forEach(r=>(r.inscripciones||[]).forEach(i=>{if(i.puesto&&i.puesto<=3)n++;}));return n;}
+function mejorPuesto(res){const p=(res?.inscripciones||[]).filter(i=>i.puesto).sort((a,b)=>a.puesto-b.puesto)[0];return p||null;}
 
 function openCompModal(comp){
   if(!comp)return;curC=comp;
   const cr=S.get('compResults')||{},ex=cr[comp.id];
-  if(ex?.inscripciones?.some(i=>Array.isArray(i.lazos))){
-    // Formato nuevo: cada inscripción trae sus propios lazos
-    cInscripciones=ex.inscripciones.map(i=>({categoria:i.categoria||'',caballo:i.caballo||'',lazos:(i.lazos&&i.lazos.length?i.lazos:lzBlank(10)).map(lzClone)}));
+  const toIns=(i,fallback)=>{
+    const dias=(Array.isArray(i.dias)&&i.dias.length?i.dias:[{lazos:fallback}]).map(d=>({lazos:(d.lazos||[]).map(lzClone)}));
+    return {categoria:i.categoria||'',caballo:i.caballo||'',puesto:i.puesto||'',totalComp:i.totalComp||'',dias};
+  };
+  if(ex?.inscripciones?.some(i=>Array.isArray(i.dias)||Array.isArray(i.lazos))){
+    cInscripciones=ex.inscripciones.map(i=>toIns(i,i.lazos&&i.lazos.length?i.lazos:lzBlank(10)));
   }else{
-    // Formato anterior: una sola serie de lazos → pasa a la primera inscripción
-    const base=(ex?.lazos?.length?ex.lazos:lzBlank(ex?.totalLazos||10)).map(lzClone);
+    // Formato antiguo: una sola serie de lazos → Día 1 de la primera inscripción
+    const base=(ex?.lazos?.length?ex.lazos:lzBlank(ex?.totalLazos||10));
     const ins=ex?.inscripciones?.length?ex.inscripciones:[{categoria:'',caballo:''}];
-    cInscripciones=ins.map((i,k)=>({categoria:i.categoria||'',caballo:i.caballo||'',lazos:k===0?base:lzBlank(base.length)}));
+    cInscripciones=ins.map((i,k)=>toIns(i,k===0?base:lzBlank(base.length)));
   }
   cNotasGen=ex?.notasGen||'';
-  cIns=0;cLz=cInscripciones[0].lazos;cAL=0;
+  cIns=0;cDia=0;setCLz();
   document.getElementById('mo-comp-t').textContent=comp.n;
   renderCompModal();openM('mo-comp');
 }
+function setCLz(){const d=cInscripciones[cIns]?.dias[cDia];cLz=d&&d.lazos.length?d.lazos:null;cAL=0;}
+function nDiasTabs(){return Math.max(compNumDias(curC),...cInscripciones.map(i=>i.dias.length));}
 
-function insScore(ins){
-  const ef=ins.lazos.filter(l=>l.status==='ef').length,m=ins.lazos.filter(l=>l.status).length;
-  return {ef,fa:m-ef,m,total:ins.lazos.length,pct:m?Math.round(ef/m*100):0};
-}
+function insScore(ins){return lzScore(insAll(ins));}
 function insLabel(ins,i){return escH(ins.categoria||('Inscripción '+(i+1)))+(ins.caballo?' · 🐎 '+escH(ins.caballo):'');}
 
 function renderInsPills(){
   const el=document.getElementById('ins-pills');if(!el)return;
-  el.innerHTML=cInscripciones.map((ins,i)=>{const sc=insScore(ins);
-    return `<button class="sess-pill ${i===cIns?'on':''}" onclick="selIns(${i})">${insLabel(ins,i)} <span style="opacity:.75;">· ${sc.ef}/${sc.total}</span></button>`;}).join('')
+  el.innerHTML=cInscripciones.map((ins,i)=>{const sc=insScore(ins),m=MEDAL(ins.puesto);
+    return `<button class="sess-pill ${i===cIns?'on':''}" onclick="selIns(${i})">${m?m+' ':''}${insLabel(ins,i)} <span style="opacity:.75;">· ${sc.ef}/${sc.total}</span></button>`;}).join('')
     +`<button class="sess-pill" onclick="agregarInscripcion()">+ Agregar categoría</button>`;
-  const tot=document.getElementById('ins-total');
-  if(tot){
-    if(cInscripciones.length>1){
-      const all=cInscripciones.map(insScore),ef=all.reduce((a,x)=>a+x.ef,0),m=all.reduce((a,x)=>a+x.m,0),t=all.reduce((a,x)=>a+x.total,0);
-      tot.style.display='block';
-      tot.textContent=`Total de la competencia: ${ef} efectivos de ${t} lazos${m?` · ${Math.round(ef/m*100)} % de los marcados`:''}`;
-    }else tot.style.display='none';
+}
+function renderDiaTabs(){
+  const el=document.getElementById('dia-tabs');if(!el)return;
+  const n=nDiasTabs();
+  if(n<2){el.style.display='none';return;}
+  el.style.display='flex';
+  el.innerHTML=Array.from({length:n},(_,k)=>{
+    const d=cInscripciones[cIns].dias[k],sc=d&&d.lazos.length?lzScore(d.lazos):null;
+    return `<button class="sess-pill ${k===cDia?'on':''}" onclick="selDia(${k})">Día ${k+1} · ${compDiaLbl(curC,k)} <span style="opacity:.75;">${sc?`· ${sc.ef}/${sc.total}`:'· —'}</span></button>`;
+  }).join('');
+}
+function renderRendimiento(){
+  const el=document.getElementById('comp-rend');if(!el)return;
+  const n=nDiasTabs(),rows=[];
+  const fila=(lbl,sc,bold)=>`<div class="bar-row" style="${bold?'font-weight:600;':''}"><div class="bar-lbl" style="width:120px;font-size:13px;${bold?'font-weight:600;color:var(--ink);':''}">${lbl}</div><div class="bar-tr"><div class="bar-fi ${bold?'r':'m'}" style="width:${sc.pct}%"></div></div><span class="bar-n" style="min-width:92px;font-size:12px;">${sc.ef}/${sc.total}${sc.m?' · '+sc.pct+' %':''}</span></div>`;
+  if(n>1){
+    for(let k=0;k<n;k++){
+      const L=cInscripciones.flatMap(i=>i.dias[k]?.lazos||[]);
+      rows.push(L.length?fila(`Día ${k+1} · ${compDiaLbl(curC,k)}`,lzScore(L)):`<div class="bar-row"><div class="bar-lbl" style="width:120px;font-size:13px;">Día ${k+1} · ${compDiaLbl(curC,k)}</div><span style="font-size:12px;color:var(--muted);">Sin lazos registrados</span></div>`);
+    }
   }
+  if(cInscripciones.length>1)cInscripciones.forEach((ins,i)=>rows.push(fila(insLabel(ins,i).replace(/ · 🐎.*/,''),insScore(ins))));
+  rows.push(fila('General',lzScore(cInscripciones.flatMap(insAll)),true));
+  const pod=cInscripciones.filter(i=>i.puesto).map((i,k)=>`<span class="tag tm" style="font-size:13px;">${puestoTxt(i)} · ${escH(i.categoria||'Inscripción')}</span>`).join(' ');
+  el.innerHTML=`<div class="ct">📊 Rendimiento</div>${pod?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">${pod}</div>`:''}<div class="bar-wrap">${rows.join('')}</div>`;
 }
 
 function renderCompModal(){
@@ -2564,37 +2601,18 @@ function renderCompModal(){
   const cf=fins.filter(f=>f.compId===c.id);
   const prem=cf.filter(f=>['premio','patrocinio'].includes(f.tipo)).reduce((a,f)=>a+f.monto,0);
   const gast=cf.filter(f=>!['premio','patrocinio'].includes(f.tipo)).reduce((a,f)=>a+f.monto,0);
-  const a=getA(c.id),ins=cInscripciones[cIns];
+  const a=getA(c.id),ins=cInscripciones[cIns],nd=nDiasTabs();
   const caballosOpts=(S.get('caballos_list')||[]).map(n=>`<option value="${escH(n)}">`).join('');
+  const prevDia=ins.dias.slice(0,cDia).reverse().find(d=>d.lazos.length);
+  const nSug=prevDia?prevDia.lazos.length:10;
+  const etiquetaDia=nd>1?`del Día ${cDia+1}`:'';
 
-  document.getElementById('mo-comp-body').innerHTML=`
-    <datalist id="comp-caballos-list">${caballosOpts}</datalist>
-    <div style="margin-bottom:16px;">
-      <div style="font-size:13px;color:var(--muted);">${c.f}${c.f!==c.ff?' → '+c.ff:''} · ${escH(c.l)}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;">
-        <span class="tag ${a==='si'?'tm':a==='tal'?'ta':a==='no'?'tr':'tg'}">${{si:'🟢 Voy',tal:'🔵 Tal vez',no:'🔴 No voy',pen:'⚪ Sin definir'}[a]}</span>
-        <button onclick="openEdit('${c.id}');closeM('mo-comp')" class="btn ghost sm">✏️ Editar</button>
-      </div>
+  const zonaLazos=cLz?`
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+      <label for="mc-total-lazos" style="font-size:13px;font-weight:500;">Lazos ${etiquetaDia} en esta categoría</label>
+      <input type="number" id="mc-total-lazos" value="${cLz.length}" min="1" max="60" onchange="ajustarTotalLazos(parseInt(this.value)||10)"
+        style="width:76px;border:1px solid var(--line2);border-radius:14px;padding:9px 10px;text-align:center;font:15px 'DM Sans',sans-serif;color:var(--ink);background:#fff;">
     </div>
-
-    <div class="ct" style="margin-bottom:8px;">📋 Mis inscripciones</div>
-    <p style="font-size:13px;margin-bottom:10px;">Cada categoría lleva su caballo y su propia serie de lazos. Toca una para registrarla.</p>
-    <div id="ins-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
-    <div id="ins-total" style="display:none;font-size:13px;font-weight:600;color:var(--ink);background:var(--lime2,#dce7bd);border-radius:14px;padding:10px 14px;margin-bottom:12px;"></div>
-
-    <div class="ld" style="margin-bottom:14px;">
-      <div class="g2">
-        <div class="fg"><label>Categoría</label><input type="text" id="ins-cat" placeholder="Ej: Damas, Abierta, Novatos…" value="${escH(ins.categoria)}" oninput="cInscripciones[cIns].categoria=this.value;renderInsPills()"></div>
-        <div class="fg"><label>Caballo</label><input type="text" id="ins-cab" list="comp-caballos-list" placeholder="Caballo de esta categoría" value="${escH(ins.caballo)}" oninput="cInscripciones[cIns].caballo=this.value;renderInsPills()"></div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <label for="mc-total-lazos" style="font-size:13px;font-weight:500;">Lazos en esta categoría</label>
-        <input type="number" id="mc-total-lazos" value="${cLz.length}" min="1" max="60" onchange="ajustarTotalLazos(parseInt(this.value)||10)"
-          style="width:76px;border:1px solid var(--line2);border-radius:14px;padding:9px 10px;text-align:center;font:15px 'DM Sans',sans-serif;color:var(--ink);background:#fff;">
-        ${cInscripciones.length>1?`<button class="btn ghost sm" style="margin-left:auto;" onclick="eliminarInscripcion(${cIns})">Quitar esta categoría</button>`:''}
-      </div>
-    </div>
-
     <div class="ss"><div class="ss-b"><span class="ss-v ss-ef" id="mc-ef">0</span><span class="ss-l">✓ Efectivos</span></div><div class="ss-b"><span class="ss-v ss-fa" id="mc-fa">0</span><span class="ss-l">✗ Fallos</span></div><div class="ss-b"><span class="ss-v ss-nd" id="mc-nd">0</span><span class="ss-l">· Sin marcar</span></div></div>
     <div class="lz-grid" id="mc-lz"></div>
     <div class="ld" id="mc-ld">
@@ -2611,7 +2629,52 @@ function renderCompModal(){
       </div>
       <textarea class="ld-ta" id="mc-ta" placeholder="Observaciones de este lazo..."></textarea>
       <div class="br"><button class="btn sm" onclick="saveCL()">Guardar →</button><button class="btn ghost sm" onclick="clearCL()">Limpiar</button></div>
+    </div>`
+  :`<div class="vq-box note" style="margin-bottom:14px;">
+      <p style="margin-bottom:12px;">Aún no registras lazos ${etiquetaDia} en <strong>${escH(ins.categoria||'esta categoría')}</strong>.</p>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <label for="dia-n" style="font-size:13px;font-weight:500;">¿Cuántos lazos?</label>
+        <input type="number" id="dia-n" value="${nSug}" min="1" max="60" style="width:76px;border:1px solid var(--line2);border-radius:14px;padding:9px 10px;text-align:center;font:15px 'DM Sans',sans-serif;color:var(--ink);background:#fff;">
+        <button class="btn sm" onclick="crearDia()">Registrar lazos ${etiquetaDia}</button>
+      </div>
+    </div>`;
+
+  document.getElementById('mo-comp-body').innerHTML=`
+    <datalist id="comp-caballos-list">${caballosOpts}</datalist>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:13px;color:var(--muted);">${c.f}${c.f!==c.ff?' → '+c.ff:''} · ${escH(c.l)}${nd>1?` · ${nd} días`:''}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;">
+        <span class="tag ${a==='si'?'tm':a==='tal'?'ta':a==='no'?'tr':'tg'}">${{si:'🟢 Voy',tal:'🔵 Tal vez',no:'🔴 No voy',pen:'⚪ Sin definir'}[a]}</span>
+        <button onclick="openEdit('${c.id}');closeM('mo-comp')" class="btn ghost sm">✏️ Editar</button>
+      </div>
     </div>
+
+    <div class="card" id="comp-rend" style="margin-bottom:18px;"></div>
+
+    <div class="ct" style="margin-bottom:8px;">📋 Mis inscripciones</div>
+    <p style="font-size:13px;margin-bottom:10px;">Cada categoría lleva su caballo, su puesto y sus propios lazos${nd>1?' por día':''}.</p>
+    <div id="ins-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
+
+    <div class="ld" style="margin-bottom:14px;">
+      <div class="g2">
+        <div class="fg"><label>Categoría</label><input type="text" id="ins-cat" placeholder="Ej: Damas, Abierta, Novatos…" value="${escH(ins.categoria)}" oninput="cInscripciones[cIns].categoria=this.value;renderInsPills();renderRendimiento()"></div>
+        <div class="fg"><label>Caballo</label><input type="text" id="ins-cab" list="comp-caballos-list" placeholder="Caballo de esta categoría" value="${escH(ins.caballo)}" oninput="cInscripciones[cIns].caballo=this.value;renderInsPills()"></div>
+      </div>
+      <div class="fg" style="margin-bottom:6px;"><label>🏆 Resultado general en esta categoría</label>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:13px;">Puesto</span>
+          <input type="number" id="ins-puesto" min="1" inputmode="numeric" placeholder="—" value="${ins.puesto||''}" style="width:78px;text-align:center;" oninput="setPuesto()">
+          <span style="font-size:13px;">de</span>
+          <input type="number" id="ins-total" min="1" inputmode="numeric" placeholder="—" value="${ins.totalComp||''}" style="width:78px;text-align:center;" oninput="setPuesto()">
+          <span style="font-size:13px;">competidoras</span>
+          <span id="ins-podio" style="font-size:22px;">${MEDAL(ins.puesto)}</span>
+        </div>
+      </div>
+      ${cInscripciones.length>1?`<div class="br" style="margin-top:4px;"><button class="btn ghost sm" onclick="eliminarInscripcion(${cIns})">Quitar esta categoría</button></div>`:''}
+    </div>
+
+    <div id="dia-tabs" style="display:none;gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
+    ${zonaLazos}
 
     <div class="div"></div>
     <div class="ct">💰 Finanzas de esta competencia</div>
@@ -2624,31 +2687,46 @@ function renderCompModal(){
     <div class="div"></div>
     <div class="fg"><label>Notas generales de la competencia</label><textarea id="mc-notas" style="min-height:70px;" oninput="cNotasGen=this.value">${escH(cNotasGen)}</textarea></div>
     <div class="br"><button class="btn" onclick="saveComp()">💾 Guardar competencia</button><button class="btn ghost" onclick="closeM('mo-comp')">Cerrar</button></div>`;
-  renderInsPills();renderCLz();updateCS();
+  renderInsPills();renderDiaTabs();renderRendimiento();
+  if(cLz){renderCLz();updateCS();}
 }
 
-function guardarNotaLazoActual(){const ta=document.getElementById('mc-ta');if(ta&&cLz[cAL])cLz[cAL].notes=ta.value;}
-function selIns(i){
-  guardarNotaLazoActual();
-  cIns=i;cLz=cInscripciones[i].lazos;cAL=0;
-  renderCompModal();
+function setPuesto(){
+  const p=parseInt(document.getElementById('ins-puesto')?.value)||'';
+  const t=parseInt(document.getElementById('ins-total')?.value)||'';
+  if(p&&t&&p>t){toast('⚠️ El puesto no puede ser mayor que el total de competidoras');}
+  cInscripciones[cIns].puesto=p;cInscripciones[cIns].totalComp=t;
+  const pod=document.getElementById('ins-podio');if(pod)pod.textContent=MEDAL(p);
+  renderInsPills();renderRendimiento();
+}
+function guardarNotaLazoActual(){const ta=document.getElementById('mc-ta');if(ta&&cLz&&cLz[cAL])cLz[cAL].notes=ta.value;}
+function selIns(i){guardarNotaLazoActual();cIns=i;setCLz();renderCompModal();}
+function selDia(k){guardarNotaLazoActual();cDia=k;setCLz();renderCompModal();}
+function crearDia(){
+  const n=Math.max(1,Math.min(60,parseInt(document.getElementById('dia-n')?.value)||10));
+  const dias=cInscripciones[cIns].dias;
+  while(dias.length<=cDia)dias.push({lazos:[]});
+  dias[cDia].lazos=lzBlank(n);
+  setCLz();renderCompModal();
 }
 function agregarInscripcion(){
   guardarNotaLazoActual();
-  const n=cInscripciones[cIns]?.lazos.length||10;
-  cInscripciones.push({categoria:'',caballo:cInscripciones[cIns]?.caballo||'',lazos:lzBlank(n)});
-  selIns(cInscripciones.length-1);
+  const cur=cInscripciones[cIns];
+  const n=cur?.dias[cDia]?.lazos.length||10;
+  const dias=[];for(let k=0;k<=cDia;k++)dias.push({lazos:k===cDia?lzBlank(n):[]});
+  cInscripciones.push({categoria:'',caballo:cur?.caballo||'',puesto:'',totalComp:'',dias});
+  cIns=cInscripciones.length-1;setCLz();renderCompModal();
   setTimeout(()=>document.getElementById('ins-cat')?.focus(),50);
 }
 function eliminarInscripcion(i){
   const ins=cInscripciones[i],sc=insScore(ins);
   if(sc.m&&!confirm(`¿Quitar "${ins.categoria||'Inscripción '+(i+1)}"? Se borrarán sus ${sc.m} lazos marcados.`))return;
   cInscripciones.splice(i,1);
-  if(!cInscripciones.length)cInscripciones.push({categoria:'',caballo:'',lazos:lzBlank(10)});
-  cIns=Math.min(i,cInscripciones.length-1);cLz=cInscripciones[cIns].lazos;cAL=0;
-  renderCompModal();
+  if(!cInscripciones.length)cInscripciones.push({categoria:'',caballo:'',puesto:'',totalComp:'',dias:[{lazos:lzBlank(10)}]});
+  cIns=Math.min(i,cInscripciones.length-1);setCLz();renderCompModal();
 }
 function ajustarTotalLazos(n){
+  if(!cLz)return;
   if(n<1)n=1;if(n>60)n=60;
   const marcadosFuera=cLz.slice(n).filter(l=>l.status).length;
   if(marcadosFuera&&!confirm(`Hay ${marcadosFuera} lazos marcados después del lazo ${n}. ¿Borrarlos?`)){document.getElementById('mc-total-lazos').value=cLz.length;return;}
@@ -2657,9 +2735,8 @@ function ajustarTotalLazos(n){
   if(cAL>=cLz.length)cAL=cLz.length-1;
   renderCLz();updateCS();
 }
-
 function renderCLz(){
-  const g=document.getElementById('mc-lz');if(!g)return;g.innerHTML='';
+  const g=document.getElementById('mc-lz');if(!g||!cLz)return;g.innerHTML='';
   cLz.forEach((l,i)=>{
     const d=document.createElement('div');
     d.className='lz'+(l.status==='ef'?' ef':l.status==='fa'?' fa':'')+(i===cAL?' active-l':'')+(l.notes?.trim()||l.cats?.length?' has-note':'');
@@ -2670,8 +2747,9 @@ function renderCLz(){
   loadCLD();
 }
 function loadCLD(){
-  const l=cLz[cAL];if(!l)return;
-  const t=document.getElementById('mc-lt');if(t)t.textContent='Lazo '+(cAL+1)+' · '+(cInscripciones[cIns].categoria||'Inscripción '+(cIns+1));
+  const l=cLz?.[cAL];if(!l)return;
+  const nd=nDiasTabs();
+  const t=document.getElementById('mc-lt');if(t)t.textContent='Lazo '+(cAL+1)+(nd>1?' · Día '+(cDia+1):'')+' · '+(cInscripciones[cIns].categoria||'Inscripción '+(cIns+1));
   const ef=document.getElementById('mc-ef-b');if(ef)ef.className='tog tog-ef'+(l.status==='ef'?' on':'');
   const fa=document.getElementById('mc-fa-b');if(fa)fa.className='tog tog-fa'+(l.status==='fa'?' on':'');
   const ew=document.getElementById('mc-ew');if(ew)ew.style.display=l.status==='fa'?'block':'none';
@@ -2683,22 +2761,25 @@ function tCC(el,k){const cats=cLz[cAL].cats;const i=cats.indexOf(k);if(i>-1)cats
 function saveCL(){guardarNotaLazoActual();if(cAL<cLz.length-1)cAL++;renderCLz();updateCS();toast('Lazo guardado');}
 function clearCL(){cLz[cAL].status=null;cLz[cAL].cats=[];cLz[cAL].notes='';renderCLz();updateCS();}
 function updateCS(){
-  const ef=cLz.filter(l=>l.status==='ef').length,fa=cLz.filter(l=>l.status==='fa').length,nd=cLz.filter(l=>!l.status).length;
-  const e=document.getElementById('mc-ef'),f=document.getElementById('mc-fa'),n=document.getElementById('mc-nd');
-  if(e)e.textContent=ef;if(f)f.textContent=fa;if(n)n.textContent=nd;
-  renderInsPills();
+  if(cLz){const sc=lzScore(cLz);
+    const e=document.getElementById('mc-ef'),f=document.getElementById('mc-fa'),n=document.getElementById('mc-nd');
+    if(e)e.textContent=sc.ef;if(f)f.textContent=sc.fa;if(n)n.textContent=sc.total-sc.m;}
+  renderInsPills();renderDiaTabs();renderRendimiento();
 }
 async function saveComp(){
   guardarNotaLazoActual();
   const cr=S.get('compResults')||{};
   const notasGen=document.getElementById('mc-notas')?.value??cNotasGen;
   const fecha=today();
-  // Se conservan las inscripciones con nombre, caballo o lazos marcados
-  let ins=cInscripciones.filter(i=>i.categoria.trim()||i.caballo.trim()||i.lazos.some(l=>l.status));
+  let ins=cInscripciones.filter(i=>i.categoria.trim()||i.caballo.trim()||i.puesto||insAll(i).some(l=>l.status));
   if(!ins.length)ins=[cInscripciones[0]];
-  const inscripciones=ins.map(i=>({categoria:i.categoria.trim(),caballo:i.caballo.trim(),totalLazos:i.lazos.length,lazos:i.lazos.map(lzClone)}));
+  const inscripciones=ins.map(i=>{
+    const dias=i.dias.map((d,k)=>({fecha:compDiaISO(curC,k),lazos:d.lazos.map(lzClone)}));
+    const all=dias.flatMap(d=>d.lazos);
+    return {categoria:i.categoria.trim(),caballo:i.caballo.trim(),puesto:parseInt(i.puesto)||null,totalComp:parseInt(i.totalComp)||null,totalLazos:all.length,dias,lazos:all};
+  });
   // Copia combinada: el Dashboard, el historial y el Coach siguen calculando el total
-  const lazos=inscripciones.flatMap((i,k)=>i.lazos.map(l=>({...l,ins:k,categoria:i.categoria||null,caballo:i.caballo||null})));
+  const lazos=inscripciones.flatMap((i,k)=>i.dias.flatMap((d,dk)=>d.lazos.map(l=>({...l,ins:k,dia:dk+1,categoria:i.categoria||null,caballo:i.caballo||null}))));
   const totalLazos=lazos.length;
   inscripciones.forEach(i=>{if(i.caballo)updateCaballosList(i.caballo);});
   cr[curC.id]={lazos,notasGen,date:fecha,totalLazos,inscripciones};
@@ -2720,39 +2801,48 @@ function loadComp(id){
 function renderCompHist(){
   const cr=S.get('compResults')||{},comps=getComps(),el=document.getElementById('comp-hist');
   const keys=Object.keys(cr);
-  if(!keys.length){el.innerHTML='<p style="font-size:.76rem;color:var(--texto3);">Sin competencias registradas aún 🏆</p>';return;}
+  if(!keys.length){el.innerHTML='<p style="font-size:13px;color:var(--muted);">Sin competencias registradas aún 🏆</p>';return;}
   el.innerHTML=keys.map((cid,si)=>{
-    const res=cr[cid],c=comps.find(x=>x.id===cid)||{n:cid,f:''},lzs=res.lazos||[];
-    const ef=lzs.filter(l=>l.status==='ef').length,fa=lzs.filter(l=>l.status==='fa').length;
-    const marcados=lzs.filter(l=>l.status).length;
-    const total=res.totalLazos||lzs.length;
-    const pct=marcados>0?Math.round(ef/marcados*100):0;
-    const dots=lzs.map(l=>`<span style="color:${l.status==='ef'?'var(--verde3)':l.status==='fa'?'var(--rojo2)':'var(--bg3)'}">●</span>`).join('');
-    const allCats=[];lzs.forEach(l=>(l.cats||[]).forEach(c=>{if(!allCats.includes(c))allCats.push(c);}));
-    const insList=(res.inscripciones||[]).filter(i=>Array.isArray(i.lazos));
-    const inscrLine=res.inscripciones?.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${res.inscripciones.map(i=>{
-      const L=i.lazos||[],e=L.filter(l=>l.status==='ef').length,m=L.filter(l=>l.status).length;
-      return `<span class="tag tm">📋 ${escH(i.categoria||'Sin categoría')}${i.caballo?' · 🐎 '+escH(i.caballo):''}${L.length?` · ${e}/${L.length}${m?' ('+Math.round(e/m*100)+'%)':''}`:''}</span>`;}).join('')}</div>`:'';
+    const res=cr[cid],c=comps.find(x=>x.id===cid)||{n:cid,f:'',ff:''},lzs=res.lazos||[];
+    const sc=lzScore(lzs),total=res.totalLazos||lzs.length;
+    const mp=mejorPuesto(res);
+    const dots=lzs.map(l=>`<span style="color:${l.status==='ef'?'var(--ink)':l.status==='fa'?'var(--leather)':'var(--bg3)'}">●</span>`).join('');
+    const allCats=[];lzs.forEach(l=>(l.cats||[]).forEach(k=>{if(!allCats.includes(k))allCats.push(k);}));
+    const insList=(res.inscripciones||[]).map(i=>({...i,dias:Array.isArray(i.dias)&&i.dias.length?i.dias:[{lazos:i.lazos||[]}]}));
+    const inscrLine=insList.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${insList.map(i=>{
+      const s=lzScore(insAll(i));
+      return `<span class="tag tm">${i.puesto?puestoTxt(i)+' · ':'📋 '}${escH(i.categoria||'Sin categoría')}${i.caballo?' · 🐎 '+escH(i.caballo):''}${s.total?` · ${s.ef}/${s.total}${s.m?' ('+s.pct+'%)':''}`:''}</span>`;}).join('')}</div>`:'';
+    const nd=Math.max(1,...insList.map(i=>i.dias.length));
+    let porDia='';
+    if(nd>1){
+      porDia=`<div style="margin-top:10px;">`+Array.from({length:nd},(_,k)=>{
+        const L=insList.flatMap(i=>i.dias[k]?.lazos||[]);if(!L.length)return '';
+        const s=lzScore(L);
+        return `<div class="bar-row"><div class="bar-lbl" style="width:110px;">Día ${k+1}${c.f?' · '+compDiaLbl(c,k):''}</div><div class="bar-tr"><div class="bar-fi m" style="width:${s.pct}%"></div></div><span class="bar-n" style="min-width:80px;">${s.ef}/${s.total} · ${s.pct}%</span></div>`;
+      }).join('')+`</div>`;
+    }
     const lazoRow=(l,i)=>`<div style="display:flex;align-items:flex-start;gap:.45rem;padding:.28rem 0;border-bottom:1px solid var(--borde);font-size:.78rem;"><span style="font-weight:700;width:28px;flex-shrink:0;color:${l.status==='ef'?'var(--ink)':l.status==='fa'?'var(--leather)':'var(--txt3)'};">${i+1}${l.status==='ef'?'✓':l.status==='fa'?'✗':'·'}</span><div>${(l.cats||[]).map(k=>`<span class="tag tr" style="margin-right:.18rem;font-size:.5rem;">${CATS[k]||k}</span>`).join('')}${l.notes?`<div style="font-style:italic;color:var(--txt2);font-size:.74rem;margin-top:.1rem;">${escH(l.notes)}</div>`:''}</div></div>`;
     const detalleLazos=insList.length
-      ? insList.map(i=>`<div style="font-weight:600;font-size:14px;margin:12px 0 4px;">📋 ${escH(i.categoria||'Sin categoría')}${i.caballo?' · 🐎 '+escH(i.caballo):''}</div>${(i.lazos||[]).map(lazoRow).join('')}`).join('')
+      ? insList.map(i=>`<div style="font-weight:600;font-size:14px;margin:14px 0 4px;">${i.puesto?puestoTxt(i)+' · ':'📋 '}${escH(i.categoria||'Sin categoría')}${i.caballo?' · 🐎 '+escH(i.caballo):''}</div>`+
+          i.dias.map((d,k)=>d.lazos?.length?`${i.dias.length>1?`<div style="font-size:12px;color:var(--muted);margin:8px 0 2px;">Día ${k+1}${c.f?' · '+compDiaLbl(c,k):''}</div>`:''}${d.lazos.map(lazoRow).join('')}`:'').join('')).join('')
       : lzs.map(lazoRow).join('');
     const det='hd-'+si;
     return `<div class="hi">
       <div class="hi-hd" onclick="document.getElementById('${det}').classList.toggle('open')">
         <span class="hi-d">${c.f?.slice(5)||res.date||''}</span>
-        <span class="hi-n">${c.n.replace(/^[^\w]*\s*/,'').substring(0,26)}</span>
+        <span class="hi-n">${mp?MEDAL(mp.puesto)+' ':''}${escH(c.n.replace(/^[^\wÁÉÍÓÚÑáéíóúñ]+/,'').substring(0,26))}</span>
         <span class="hi-dots">${dots}</span>
-        <span class="hi-sc" style="color:var(--verde3);">${ef}✓</span>
-        <span class="hi-sc" style="color:var(--rojo2);">${fa}✗</span>
+        <span class="hi-sc" style="color:var(--ink);">${sc.ef}✓</span>
+        <span class="hi-sc" style="color:var(--leather);">${sc.fa}✗</span>
         <span class="hi-sc" style="color:var(--txt3);">/${total}</span>
-        <span class="hi-sc" style="color:${pct>=70?'var(--verde3)':pct>=40?'var(--oro2)':'var(--rojo2)'};">${pct}%</span>
+        <span class="hi-sc" style="color:${sc.pct>=70?'var(--ink)':sc.pct>=40?'var(--oro2)':'var(--leather)'};">${sc.pct}%</span>
       </div>
       ${inscrLine}
+      ${porDia}
       ${allCats.length?`<div style="display:flex;gap:.26rem;flex-wrap:wrap;margin-top:.32rem;">${allCats.map(k=>`<span class="tag tr">${CATS[k]||k}</span>`).join('')}</div>`:''}
       <div class="hi-det" id="${det}">
         ${detalleLazos}
-        ${res.notasGen?`<div style="font-style:italic;color:var(--txt2);font-size:.76rem;margin-top:.38rem;padding:.45rem;background:var(--bg);border-radius:var(--radio);">${res.notasGen}</div>`:''}
+        ${res.notasGen?`<div style="font-style:italic;color:var(--txt2);font-size:.76rem;margin-top:.38rem;padding:.45rem;background:var(--bg);border-radius:var(--radio);">${escH(res.notasGen)}</div>`:''}
         <div class="br" style="margin-top:.38rem;"><button class="btn ghost sm" onclick="openCompModal(getComps().find(c=>c.id==='${cid}'))">✏️ Editar</button></div>
       </div></div>`;
   }).join('');
@@ -2917,8 +3007,8 @@ function renderELzGrid(){
   eLz.forEach((l,i)=>{
     const d=document.createElement('div');
     d.className='lz'+(l.status==='ef'?' ef':l.status==='fa'?' fa':'')+(i===eAL?' active-l':'')+(l.notes?.trim()||l.cats?.length?' has-note':'');
-    d.innerHTML=`<span class="lz-n">${i+1}</span><span class="lz-s">${l.status==='ef'?'OK':l.status==='fa'?'ERR':'—'}</span><span class="lz-dot"></span>`;
-    d.onclick=()=>{eAL=i;renderELzGrid();loadELD();};
+    d.innerHTML=`<span class="lz-n">${i+1}</span><span class="lz-s">${l.tiempo!=null?l.tiempo+' s':l.status==='ef'?'OK':l.status==='fa'?'ERR':'—'}</span><span class="lz-dot"></span>`;
+    d.onclick=()=>{capturarLazoActual();eAL=i;renderELzGrid();loadELD();};
     g.appendChild(d);
   });
   loadELD();
@@ -2932,10 +3022,18 @@ function loadELD(){
   document.querySelectorAll('#e-ec .ec').forEach(el=>{const k=el.getAttribute('onclick').match(/'([^']+)'/)[1];el.classList.toggle('on',(l.cats||[]).includes(k));});
   const ta=document.getElementById('e-ta');if(ta)ta.value=l.notes||'';
   const lc=document.getElementById('e-lz-cab');if(lc)lc.value=l.caballo||'';
+  const lt=document.getElementById('e-lz-t');if(lt)lt.value=l.tiempo!=null?l.tiempo:'';
 }
-function setES(st){eLz[eAL].status=eLz[eAL].status===st?null:st;if(eLz[eAL].status!=='fa')eLz[eAL].cats=[];renderELzGrid();updateESS();}
+function setES(st){capturarLazoActual();eLz[eAL].status=eLz[eAL].status===st?null:st;if(eLz[eAL].status!=='fa')eLz[eAL].cats=[];renderELzGrid();updateESS();}
 function tEC(el,k){const cats=eLz[eAL].cats;const i=cats.indexOf(k);if(i>-1)cats.splice(i,1);else cats.push(k);el.classList.toggle('on',cats.includes(k));}
-function saveEL(){const ta=document.getElementById('e-ta');if(ta)eLz[eAL].notes=ta.value;const lc=document.getElementById('e-lz-cab');if(lc){const v=lc.value.trim();eLz[eAL].caballo=v||null;if(v){updateCaballosList(v);renderCaballosDatalist();}}if(eAL<eLz.length-1)eAL++;renderELzGrid();updateESS();toast('Lazo '+(eAL)+' guardado');}
+function capturarLazoActual(){
+  const l=eLz[eAL];if(!l)return;
+  const ta=document.getElementById('e-ta');if(ta)l.notes=ta.value;
+  const lc=document.getElementById('e-lz-cab');if(lc){const v=lc.value.trim();l.caballo=v||null;}
+  leerTiempoLazo();
+}
+function leerTiempoLazo(){const lt=document.getElementById('e-lz-t');if(!lt||!eLz[eAL])return;const v=parseFloat(String(lt.value).replace(',','.'));eLz[eAL].tiempo=isFinite(v)&&v>0?Math.round(v*100)/100:null;}
+function saveEL(){leerTiempoLazo();const ta=document.getElementById('e-ta');if(ta)eLz[eAL].notes=ta.value;const lc=document.getElementById('e-lz-cab');if(lc){const v=lc.value.trim();eLz[eAL].caballo=v||null;if(v){updateCaballosList(v);renderCaballosDatalist();}}if(eAL<eLz.length-1)eAL++;renderELzGrid();updateESS();toast('Lazo '+(eAL)+' guardado');}
 function clearEL(){eLz[eAL]={status:null,cats:[],notes:''};renderELzGrid();}
 function updateESS(){
   const ef=eLz.filter(l=>l.status==='ef').length,fa=eLz.filter(l=>l.status==='fa').length,nd=eLz.filter(l=>!l.status).length;
@@ -2944,6 +3042,7 @@ function updateESS(){
 }
 function sEn(n,btn){eEnrg=n;document.querySelectorAll('#e-enrg button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
 async function saveESess(){
+  capturarLazoActual();
   {const lc=document.getElementById('e-lz-cab');if(lc&&lc.value.trim())eLz[eAL].caballo=lc.value.trim();const cs=document.getElementById('e-caballo')?.value.trim();if(cs)eLz.forEach(l=>{if(!l.caballo)l.caballo=cs;});}
   const ta=document.getElementById('e-ta');if(ta)eLz[eAL].notes=ta.value;
   const fecha=document.getElementById('e-fecha')?.value||today();
@@ -2970,6 +3069,7 @@ async function saveESess(){
       <div style="font-family:var(--display);font-size:1.8rem;font-weight:700;color:${pct>=70?'var(--musgo2)':pct>=40?'var(--cobre2)':'var(--rojo2)'};">${pct}%</div>
       <div><div style="font-size:.83rem;color:var(--marfil);">${ef} efectivos de ${tot} marcados (${eLz.length} total) · Sesión ${eSesNum}${caballo?' · 🐎 '+caballo:''}</div>
       ${topErr?`<div style="font-family:var(--mono);font-size:.6rem;color:var(--texto2);margin-top:.18rem;">⚠️ Errores: ${topErr}</div>`:''}
+      ${tiemposTxt(eLz)?`<div style="font-size:.72rem;color:var(--ink);margin-top:.25rem;font-weight:600;">${tiemposTxt(eLz)}</div>`:''}
       <div style="font-family:var(--mono);font-size:.6rem;color:${pct>=70?'var(--musgo2)':pct>=40?'var(--cobre2)':'var(--rojo2)'};margin-top:.18rem;">${pct>=80?'🌟 Sesión excelente':pct>=60?'✅ Buena sesión':pct>=40?'📈 En desarrollo':'💪 Sigue trabajando'}</div>
       </div></div>`;
   }
@@ -2996,6 +3096,13 @@ function resetESess(){
   }
   checkSesDelDia();
 }
+function mejorTiempo(L){const t=(L||[]).filter(l=>l.tiempo!=null).map(l=>l.tiempo);return t.length?Math.min(...t):null;}
+function tiemposTxt(L){
+  const all=(L||[]).filter(l=>l.tiempo!=null);if(!all.length)return '';
+  const ef=all.filter(l=>l.status==='ef').map(l=>l.tiempo);
+  const prom=ef.length?Math.round(ef.reduce((a,b)=>a+b,0)/ef.length*100)/100:null;
+  return `⏱ Mejor tiempo: ${Math.min(...all.map(l=>l.tiempo))} s${prom!=null?` · Promedio de efectivos: ${prom} s`:''} · ${all.length} lazos cronometrados`;
+}
 function renderEHist(){
   const eh=S.get('eHist')||[],el=document.getElementById('e-hist');if(!el)return;
   if(!eh.length){el.innerHTML='<p style="font-size:.76rem;color:var(--texto3);">Sin sesiones aún 🪢</p>';return;}
@@ -3009,9 +3116,10 @@ function renderEHist(){
       <span class="hi-dots">${dots}</span>
       <span class="hi-sc" style="color:${s.pct>=70?'var(--musgo2)':s.pct>=40?'var(--cobre2)':'var(--rojo2)'};">${s.pct||0}%</span>
       ${s.dur?`<span class="hi-sc" style="color:var(--texto3);">${s.dur}m</span>`:''}
+      ${mejorTiempo(s.lazos)!=null?`<span class="hi-sc" style="color:var(--ink);">⏱ ${mejorTiempo(s.lazos)} s</span>`:''}
     </div>
     <div class="hi-det" id="${det}">
-      ${(s.lazos||[]).map((l,i)=>`<div style="display:flex;align-items:flex-start;gap:.4rem;padding:.25rem 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:.76rem;"><span style="font-family:var(--display);font-weight:700;width:22px;flex-shrink:0;color:${l.status==='ef'?'var(--musgo2)':l.status==='fa'?'var(--rojo2)':'var(--texto3)'};">${i+1}${l.status==='ef'?'✓':l.status==='fa'?'✗':'·'}</span><div>${l.caballo&&l.caballo!==s.caballo?`<span class="tag ta" style="font-size:.48rem;margin-right:.16rem;">🐎 ${l.caballo}</span>`:''}${(l.cats||[]).map(k=>`<span class="tag tr" style="font-size:.48rem;margin-right:.16rem;">${CATS[k]||k}</span>`).join('')}${l.notes?`<div style="font-style:italic;color:var(--texto2);font-size:.72rem;">${l.notes}</div>`:''}</div></div>`).join('')}
+      ${(s.lazos||[]).map((l,i)=>`<div style="display:flex;align-items:flex-start;gap:.4rem;padding:.25rem 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:.76rem;"><span style="font-family:var(--display);font-weight:700;width:22px;flex-shrink:0;color:${l.status==='ef'?'var(--musgo2)':l.status==='fa'?'var(--rojo2)':'var(--texto3)'};">${i+1}${l.status==='ef'?'✓':l.status==='fa'?'✗':'·'}</span><div>${l.tiempo!=null?`<span class="tag tm" style="font-size:.48rem;margin-right:.16rem;">⏱ ${l.tiempo} s</span>`:''}${l.caballo&&l.caballo!==s.caballo?`<span class="tag ta" style="font-size:.48rem;margin-right:.16rem;">🐎 ${l.caballo}</span>`:''}${(l.cats||[]).map(k=>`<span class="tag tr" style="font-size:.48rem;margin-right:.16rem;">${CATS[k]||k}</span>`).join('')}${l.notes?`<div style="font-style:italic;color:var(--texto2);font-size:.72rem;">${l.notes}</div>`:''}</div></div>`).join('')}
       ${s.notes?`<div style="font-style:italic;color:var(--texto2);font-size:.74rem;margin-top:.28rem;">${escH(s.notes)}</div>`:''}
       <div class="br"><button class="btn ghost sm" style="color:var(--leather);border-color:#deb9a0;" onclick="event.stopPropagation();borrarEntreno(${si})">🗑 Borrar este entreno</button></div>
     </div></div>`;
