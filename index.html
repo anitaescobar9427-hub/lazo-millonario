@@ -1461,7 +1461,7 @@ function renderHoy(){
   </section>
   <div class="vq-stats">
     <div class="vq-stat"><small>EFECTIVIDAD</small><strong>${pct===null?'—':pct+' %'}</strong><p>${marc?`${efs} efectivos de ${marc} lazos`:'Registra tu primer entreno'}</p></div>
-    <div class="vq-stat"><small>ÚLTIMO ENTRENO</small><strong>${ult?(ult.pct||0)+' %':'—'}</strong><p>${ult?fechaCorta(ult.f)+(ult.caballo?' · '+escH(ult.caballo):''):'Aún sin sesiones'}</p></div>
+    <div class="vq-stat"><small>ÚLTIMO ENTRENO</small><strong>${ult?(ult.pct||0)+' %':'—'}</strong><p>${ult?fechaCorta(ult.f)+(ult.caballo?' · '+escH(ult.caballo):''):'Aún sin sesiones'}</p><p style="margin-top:6px;font-weight:600;color:var(--ink);">${(()=>{const r=calcRacha();return r.actual?`🔥 ${r.actual} ${r.actual===1?'día':'días'} seguidos${r.hoyEntreno?'':' · entrena hoy para no perderla'}`:`🔥 Sin racha activa · ${r.ult7} de 7 días esta semana`;})()}</p></div>
     <div class="vq-stat"><small>PRÓXIMA COMPETENCIA</small><strong>${prox?fechaCorta(prox.f):'—'}</strong><p>${prox?escH(prox.l||''):'Sin fecha definida'}</p></div>
   </div>
   <div class="vq-grid">
@@ -1562,7 +1562,8 @@ function buildCoachContext() {
       ? Math.round(ef / lzs.filter(l => l.status).length * 100) : 0;
     const insTxt = (res.inscripciones || []).map(i => {
       const dias = (i.dias || []).map((d, k) => { const L = d.lazos || []; if (!L.length) return ''; const e = L.filter(l => l.status === 'ef').length, m = L.filter(l => l.status).length; return `día ${k+1}: ${e}/${L.length}`; }).filter(Boolean).join(', ');
-      return `${i.categoria || 'categoría'}${i.caballo ? ' con ' + i.caballo : ''}: ${i.puesto ? 'puesto ' + i.puesto + (i.totalComp ? ' de ' + i.totalComp : '') : 'sin puesto registrado'}${dias ? ' [' + dias + ']' : ''}`;
+      const mt = mejorTiempo((i.dias||[]).flatMap(d=>d.lazos||[]));
+      return `${i.categoria || 'categoría'}${i.caballo ? ' con ' + i.caballo : ''}${mt!=null ? ', mejor tiempo ' + mt + ' s' : ''}: ${i.puesto ? 'puesto ' + i.puesto + (i.totalComp ? ' de ' + i.totalComp : '') : 'sin puesto registrado'}${dias ? ' [' + dias + ']' : ''}`;
     }).join('; ');
     return `${c.n?.replace(/^[^\w]*\s*/,'').substring(0,40)} (${c.f?.slice(0,7)}): ${ef}✓ ${fa}✗ ${pct}%${insTxt ? ' | ' + insTxt : ''}${res.notasGen ? ' — ' + res.notasGen.substring(0, 80) : ''}`;
   });
@@ -1610,6 +1611,8 @@ ERRORES MÁS FRECUENTES (entrenos + competencias combinados):
 ${errTop.length ? errTop.map(e => '- ' + e).join('\n') : '- Sin errores categorizados aún'}
 
 TIEMPOS DE LAZO (últimas sesiones cronometradas): ${eh.slice(0,5).map(x=>tiemposTxt(x.lazos)).filter(Boolean).map(t=>t.replace('⏱ ','')).join(' | ') || 'sin tiempos registrados'}
+
+RACHA: ${(()=>{const r=calcRacha();return `${r.actual} días seguidos (mejor: ${r.mejor}); ${r.ult7} de los últimos 7 días con entreno o competencia`;})()}
 
 ÚLTIMAS 3 SESIONES:
 ${ultimasSesiones.length ? ultimasSesiones.map(s => '- ' + s).join('\n') : '- Sin sesiones aún'}
@@ -2365,7 +2368,7 @@ function renderDash(){
   const totLz=eh.reduce((a,s)=>a+(s.lazos||[]).length,0);
   const totEf=eh.reduce((a,s)=>a+(s.lazos||[]).filter(l=>l.status==='ef').length,0);
   const pct=totLz>0?Math.round(totEf/totLz*100):0;
-  const cdone=Object.keys(cr).length,racha=S.get('streak')||0;
+  const cdone=Object.keys(cr).length,rachaInfo=calcRacha(),racha=rachaInfo.actual;
   let p=0,g=0;fins.forEach(f=>{['premio','patrocinio'].includes(f.tipo)?p+=f.monto:g+=f.monto;});
   const saldo=p-g;
   document.getElementById('dash-stats').innerHTML=`
@@ -2373,7 +2376,7 @@ function renderDash(){
     <div class="sb"><span class="sv m">${pct}%</span><span class="sl2">📈 Efectividad</span></div>
     <div class="sb"><span class="sv a">${cdone}</span><span class="sl2">🏆 Competencias</span></div>
     <div class="sb"><span class="sv am">${podiosCount()}</span><span class="sl2">🥇 Podios</span></div>
-    <div class="sb"><span class="sv c">${racha}</span><span class="sl2">🔥 Racha</span></div>
+    <div class="sb"><span class="sv c">${racha}</span><span class="sl2">🔥 Racha (días) · mejor ${rachaInfo.mejor}</span></div>
     <div class="sb"><span class="sv ${saldo>=0?'m':'r'}" style="font-size:1.1rem;">${fmtCOP(saldo)}</span><span class="sl2">💰 Saldo</span></div>`;
   // Gráfico efectividad
   const efEl=document.getElementById('d-ef');
@@ -2527,7 +2530,7 @@ async function saveEdit(id){
 // ── COMP MODAL ──
 let curC=null,cLz=null,cAL=0,cInscripciones=[],cIns=0,cDia=0,cNotasGen='';
 const lzBlank=n=>Array.from({length:n},()=>({status:null,cats:[],notes:''}));
-const lzClone=l=>({status:l.status??null,cats:[...(l.cats||[])],notes:l.notes||''});
+const lzClone=l=>({status:l.status??null,cats:[...(l.cats||[])],notes:l.notes||'',...(l.tiempo!=null?{tiempo:l.tiempo}:{})});
 const lzScore=L=>{const ef=L.filter(l=>l.status==='ef').length,m=L.filter(l=>l.status).length;return{ef,fa:m-ef,m,total:L.length,pct:m?Math.round(ef/m*100):0};};
 const MEDAL=p=>p==1?'🥇':p==2?'🥈':p==3?'🥉':'';
 function puestoTxt(i){if(!i||!i.puesto)return '';const m=MEDAL(i.puesto);return `${m?m+' ':''}${i.puesto}.º${i.totalComp?' de '+i.totalComp:''}`;}
@@ -2535,6 +2538,24 @@ function compNumDias(c){if(!c?.f||!c?.ff)return 1;const n=Math.round((new Date(c
 function compDiaISO(c,k){const d=new Date(c.f+'T12:00:00');d.setDate(d.getDate()+k);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function compDiaLbl(c,k){return new Date(compDiaISO(c,k)+'T12:00:00').toLocaleDateString('es-CO',{weekday:'short',day:'numeric',month:'short'}).replace(/\./g,'');}
 const insAll=i=>(i.dias||[]).flatMap(d=>d.lazos||[]);
+// Racha: días seguidos con al menos un entreno o un día de competencia registrado.
+// Si hoy aún no has entrenado, la racha de ayer se mantiene viva hasta medianoche.
+function diasActivos(){
+  const set=new Set();
+  (S.get('eHist')||[]).forEach(e=>{if(e.f)set.add(e.f);});
+  Object.values(S.get('compResults')||{}).forEach(r=>(r.inscripciones||[]).forEach(i=>(i.dias||[]).forEach(d=>{if(d.fecha&&(d.lazos||[]).some(l=>l.status))set.add(d.fecha);})));
+  return set;
+}
+function isoMenos(iso,n){const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()-n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function calcRacha(){
+  const set=diasActivos(),hoy=today();
+  let inicio=set.has(hoy)?hoy:set.has(isoMenos(hoy,1))?isoMenos(hoy,1):null;
+  let actual=0;if(inicio){while(set.has(isoMenos(inicio,actual)))actual++;}
+  const dias=[...set].sort();let mejor=0,run=0,prev=null;
+  dias.forEach(d=>{run=(prev&&isoMenos(d,1)===prev)?run+1:1;mejor=Math.max(mejor,run);prev=d;});
+  const ult7=Array.from({length:7},(_,k)=>set.has(isoMenos(hoy,k))).filter(Boolean).length;
+  return {actual,mejor,hoyEntreno:set.has(hoy),ult7};
+}
 function podiosCount(){let n=0;Object.values(S.get('compResults')||{}).forEach(r=>(r.inscripciones||[]).forEach(i=>{if(i.puesto&&i.puesto<=3)n++;}));return n;}
 function mejorPuesto(res){const p=(res?.inscripciones||[]).filter(i=>i.puesto).sort((a,b)=>a.puesto-b.puesto)[0];return p||null;}
 
@@ -2587,11 +2608,12 @@ function renderRendimiento(){
   if(n>1){
     for(let k=0;k<n;k++){
       const L=cInscripciones.flatMap(i=>i.dias[k]?.lazos||[]);
-      rows.push(L.length?fila(`Día ${k+1} · ${compDiaLbl(curC,k)}`,lzScore(L)):`<div class="bar-row"><div class="bar-lbl" style="width:120px;font-size:13px;">Día ${k+1} · ${compDiaLbl(curC,k)}</div><span style="font-size:12px;color:var(--muted);">Sin lazos registrados</span></div>`);
+      rows.push(L.length?fila(`Día ${k+1} · ${compDiaLbl(curC,k)}`,lzScore(L))+(mejorTiempo(L)!=null?`<div style="font-size:12px;color:var(--muted);margin:-2px 0 8px 120px;padding-left:8px;">⏱ mejor ${mejorTiempo(L)} s</div>`:''):`<div class="bar-row"><div class="bar-lbl" style="width:120px;font-size:13px;">Día ${k+1} · ${compDiaLbl(curC,k)}</div><span style="font-size:12px;color:var(--muted);">Sin lazos registrados</span></div>`);
     }
   }
   if(cInscripciones.length>1)cInscripciones.forEach((ins,i)=>rows.push(fila(insLabel(ins,i).replace(/ · 🐎.*/,''),insScore(ins))));
   rows.push(fila('General',lzScore(cInscripciones.flatMap(insAll)),true));
+  const tg=tiemposTxt(cInscripciones.flatMap(insAll));if(tg)rows.push(`<div style="font-size:13px;font-weight:600;color:var(--ink);margin-top:8px;">${tg}</div>`);
   const pod=cInscripciones.filter(i=>i.puesto).map((i,k)=>`<span class="tag tm" style="font-size:13px;">${puestoTxt(i)} · ${escH(i.categoria||'Inscripción')}</span>`).join(' ');
   el.innerHTML=`<div class="ct">📊 Rendimiento</div>${pod?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">${pod}</div>`:''}<div class="bar-wrap">${rows.join('')}</div>`;
 }
@@ -2627,6 +2649,7 @@ function renderCompModal(){
           <div class="ec" onclick="tCC(this,'soltada')">🤚 Soltada</div><div class="ec" onclick="tCC(this,'otro')">+ Otro</div>
         </div>
       </div>
+      <div class="fg" style="margin-bottom:.45rem;"><label>⏱ Tiempo (segundos, si aplica)</label><input type="text" id="mc-t" inputmode="decimal" autocomplete="off" placeholder="Ej: 8,45" style="max-width:160px;"></div>
       <textarea class="ld-ta" id="mc-ta" placeholder="Observaciones de este lazo..."></textarea>
       <div class="br"><button class="btn sm" onclick="saveCL()">Guardar →</button><button class="btn ghost sm" onclick="clearCL()">Limpiar</button></div>
     </div>`
@@ -2699,7 +2722,12 @@ function setPuesto(){
   const pod=document.getElementById('ins-podio');if(pod)pod.textContent=MEDAL(p);
   renderInsPills();renderRendimiento();
 }
-function guardarNotaLazoActual(){const ta=document.getElementById('mc-ta');if(ta&&cLz&&cLz[cAL])cLz[cAL].notes=ta.value;}
+function guardarNotaLazoActual(){
+  const l=cLz&&cLz[cAL];if(!l)return;
+  const ta=document.getElementById('mc-ta');if(ta)l.notes=ta.value;
+  const t=document.getElementById('mc-t');
+  if(t){const v=parseFloat(String(t.value).replace(',','.'));if(isFinite(v)&&v>0)l.tiempo=Math.round(v*100)/100;else delete l.tiempo;}
+}
 function selIns(i){guardarNotaLazoActual();cIns=i;setCLz();renderCompModal();}
 function selDia(k){guardarNotaLazoActual();cDia=k;setCLz();renderCompModal();}
 function crearDia(){
@@ -2740,7 +2768,7 @@ function renderCLz(){
   cLz.forEach((l,i)=>{
     const d=document.createElement('div');
     d.className='lz'+(l.status==='ef'?' ef':l.status==='fa'?' fa':'')+(i===cAL?' active-l':'')+(l.notes?.trim()||l.cats?.length?' has-note':'');
-    d.innerHTML=`<span class="lz-n">${i+1}</span><span class="lz-s">${l.status==='ef'?'OK':l.status==='fa'?'ERR':'—'}</span><span class="lz-dot"></span>`;
+    d.innerHTML=`<span class="lz-n">${i+1}</span><span class="lz-s">${l.tiempo!=null?l.tiempo+' s':l.status==='ef'?'OK':l.status==='fa'?'ERR':'—'}</span><span class="lz-dot"></span>`;
     d.onclick=()=>{guardarNotaLazoActual();cAL=i;renderCLz();};
     g.appendChild(d);
   });
@@ -2755,11 +2783,12 @@ function loadCLD(){
   const ew=document.getElementById('mc-ew');if(ew)ew.style.display=l.status==='fa'?'block':'none';
   document.querySelectorAll('#mc-ec .ec').forEach(el=>{const k=el.getAttribute('onclick').match(/'([^']+)'/)[1];el.classList.toggle('on',(l.cats||[]).includes(k));});
   const ta=document.getElementById('mc-ta');if(ta)ta.value=l.notes||'';
+  const tIn=document.getElementById('mc-t');if(tIn)tIn.value=l.tiempo!=null?String(l.tiempo).replace('.',','):'';
 }
 function setCS(st){guardarNotaLazoActual();cLz[cAL].status=cLz[cAL].status===st?null:st;if(cLz[cAL].status!=='fa')cLz[cAL].cats=[];renderCLz();updateCS();}
 function tCC(el,k){const cats=cLz[cAL].cats;const i=cats.indexOf(k);if(i>-1)cats.splice(i,1);else cats.push(k);el.classList.toggle('on',cats.includes(k));}
 function saveCL(){guardarNotaLazoActual();if(cAL<cLz.length-1)cAL++;renderCLz();updateCS();toast('Lazo guardado');}
-function clearCL(){cLz[cAL].status=null;cLz[cAL].cats=[];cLz[cAL].notes='';renderCLz();updateCS();}
+function clearCL(){cLz[cAL].status=null;cLz[cAL].cats=[];cLz[cAL].notes='';delete cLz[cAL].tiempo;renderCLz();updateCS();}
 function updateCS(){
   if(cLz){const sc=lzScore(cLz);
     const e=document.getElementById('mc-ef'),f=document.getElementById('mc-fa'),n=document.getElementById('mc-nd');
@@ -2821,7 +2850,7 @@ function renderCompHist(){
         return `<div class="bar-row"><div class="bar-lbl" style="width:110px;">Día ${k+1}${c.f?' · '+compDiaLbl(c,k):''}</div><div class="bar-tr"><div class="bar-fi m" style="width:${s.pct}%"></div></div><span class="bar-n" style="min-width:80px;">${s.ef}/${s.total} · ${s.pct}%</span></div>`;
       }).join('')+`</div>`;
     }
-    const lazoRow=(l,i)=>`<div style="display:flex;align-items:flex-start;gap:.45rem;padding:.28rem 0;border-bottom:1px solid var(--borde);font-size:.78rem;"><span style="font-weight:700;width:28px;flex-shrink:0;color:${l.status==='ef'?'var(--ink)':l.status==='fa'?'var(--leather)':'var(--txt3)'};">${i+1}${l.status==='ef'?'✓':l.status==='fa'?'✗':'·'}</span><div>${(l.cats||[]).map(k=>`<span class="tag tr" style="margin-right:.18rem;font-size:.5rem;">${CATS[k]||k}</span>`).join('')}${l.notes?`<div style="font-style:italic;color:var(--txt2);font-size:.74rem;margin-top:.1rem;">${escH(l.notes)}</div>`:''}</div></div>`;
+    const lazoRow=(l,i)=>`<div style="display:flex;align-items:flex-start;gap:.45rem;padding:.28rem 0;border-bottom:1px solid var(--borde);font-size:.78rem;"><span style="font-weight:700;width:28px;flex-shrink:0;color:${l.status==='ef'?'var(--ink)':l.status==='fa'?'var(--leather)':'var(--txt3)'};">${i+1}${l.status==='ef'?'✓':l.status==='fa'?'✗':'·'}</span><div>${l.tiempo!=null?`<span class="tag tm" style="margin-right:.18rem;font-size:.5rem;">⏱ ${l.tiempo} s</span>`:''}${(l.cats||[]).map(k=>`<span class="tag tr" style="margin-right:.18rem;font-size:.5rem;">${CATS[k]||k}</span>`).join('')}${l.notes?`<div style="font-style:italic;color:var(--txt2);font-size:.74rem;margin-top:.1rem;">${escH(l.notes)}</div>`:''}</div></div>`;
     const detalleLazos=insList.length
       ? insList.map(i=>`<div style="font-weight:600;font-size:14px;margin:14px 0 4px;">${i.puesto?puestoTxt(i)+' · ':'📋 '}${escH(i.categoria||'Sin categoría')}${i.caballo?' · 🐎 '+escH(i.caballo):''}</div>`+
           i.dias.map((d,k)=>d.lazos?.length?`${i.dias.length>1?`<div style="font-size:12px;color:var(--muted);margin:8px 0 2px;">Día ${k+1}${c.f?' · '+compDiaLbl(c,k):''}</div>`:''}${d.lazos.map(lazoRow).join('')}`:'').join('')).join('')
@@ -2836,6 +2865,7 @@ function renderCompHist(){
         <span class="hi-sc" style="color:var(--leather);">${sc.fa}✗</span>
         <span class="hi-sc" style="color:var(--txt3);">/${total}</span>
         <span class="hi-sc" style="color:${sc.pct>=70?'var(--ink)':sc.pct>=40?'var(--oro2)':'var(--leather)'};">${sc.pct}%</span>
+        ${mejorTiempo(lzs)!=null?`<span class="hi-sc" style="color:var(--ink);">⏱ ${mejorTiempo(lzs)} s</span>`:''}
       </div>
       ${inscrLine}
       ${porDia}
